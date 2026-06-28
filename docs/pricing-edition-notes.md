@@ -2,9 +2,9 @@
 
 ## Recommended Pricing
 
-- Launch pricing:
-- Standard: $49
-- Pro: $99
+- Launch pricing (first-listing adoption pricing; raise once reviews and the Commerce accounting wedge exist):
+- Standard: $29
+- Pro: $69
 
 ## Pricing Direction After Launch Validation
 

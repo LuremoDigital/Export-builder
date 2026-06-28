@@ -114,6 +114,22 @@ Relation values export as:
 - `runDataExports`
 - `downloadDataExports`
 
+## Data Handling & Retention
+
+Exports can contain personal data (user records, Commerce order and customer
+details). Handle the output accordingly:
+
+- Completed export files are written to Craft's storage and remain on disk until
+  you delete the run from run history. They are not auto-expired.
+- Download access is gated by the `downloadDataExports` permission.
+- Pro webhook delivery posts the export payload to your configured endpoint; the
+  endpoint URL and any secret you set are stored in the template config. Use
+  HTTPS endpoints and rotate secrets if exposed.
+- Pro email delivery sends the exported file as an attachment to the addresses
+  you configure.
+- For sites with data-retention obligations, periodically prune old runs (and any
+  remote copies) so exported personal data is not retained longer than needed.
+
 ## Known Limitations
 
 - V1 supports basic filters only
@@ -131,8 +147,8 @@ Suggested screenshots for release:
 
 ## Support
 
-- GitHub issues for reproducible bugs: [github.com/LuukRM2000/Data-export-builder/issues](https://github.com/LuukRM2000/Data-export-builder/issues)
-- Commercial support: configure a real support inbox before Plugin Store submission
+- GitHub issues for reproducible bugs: [github.com/LuremoDigital/Data-export-builder/issues](https://github.com/LuremoDigital/Data-export-builder/issues)
+- Commercial support: `SUPPORT_EMAIL_TODO` (replace with the monitored support inbox before Plugin Store submission)
 
 ## Roadmap
 
@@ -142,10 +158,10 @@ Suggested screenshots for release:
 
 ## Pricing
 
-- Standard: $49
-- Pro: $99
+- Standard: $29
+- Pro: $69
 
-See [docs/pricing-edition-notes.md](/Users/luukmolenbeek/Developer/Data-export-builder/docs/pricing-edition-notes.md) for edition rationale and pricing direction after launch validation.
+See [docs/pricing-edition-notes.md](docs/pricing-edition-notes.md) for edition rationale and pricing direction after launch validation.
 
 ## Editions
 

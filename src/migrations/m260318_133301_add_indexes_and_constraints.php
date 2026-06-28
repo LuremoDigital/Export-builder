@@ -98,27 +98,47 @@ final class m260318_133301_add_indexes_and_constraints extends Migration
         $this->addForeignKey($name, $table, $columns, $refTable, $refColumns, $delete, $update);
     }
 
+    /**
+     * Cross-database index existence check.
+     *
+     * Uses Yii's schema introspection (getTableIndexes) rather than a
+     * MySQL-only information_schema query, so the migration runs cleanly on
+     * both MySQL/MariaDB and PostgreSQL — every database Craft 5 supports.
+     *
+     * Passes refresh=true so the metadata is read live rather than from Yii's
+     * schema cache, matching the always-live semantics of the previous
+     * information_schema query (no same-process staleness window).
+     */
     private function indexExists(string $table, string $name): bool
     {
-        return (new \yii\db\Query())
-            ->from('information_schema.statistics')
-            ->where([
-                'table_schema' => $this->db->createCommand('SELECT DATABASE()')->queryScalar(),
-                'table_name' => $this->db->getSchema()->getRawTableName($table),
-                'index_name' => $name,
-            ])
-            ->exists($this->db);
+        $rawTableName = $this->db->getSchema()->getRawTableName($table);
+
+        foreach ($this->db->getSchema()->getTableIndexes($rawTableName, true) as $index) {
+            if ($index->name === $name) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
+    /**
+     * Cross-database foreign-key existence check.
+     *
+     * Uses Yii's getTableForeignKeys introspection instead of a MySQL-only
+     * information_schema query, so it works identically on MySQL/MariaDB and
+     * PostgreSQL. Passes refresh=true for a live read (see indexExists).
+     */
     private function foreignKeyExists(string $table, string $name): bool
     {
-        return (new \yii\db\Query())
-            ->from('information_schema.referential_constraints')
-            ->where([
-                'constraint_schema' => $this->db->createCommand('SELECT DATABASE()')->queryScalar(),
-                'table_name' => $this->db->getSchema()->getRawTableName($table),
-                'constraint_name' => $name,
-            ])
-            ->exists($this->db);
+        $rawTableName = $this->db->getSchema()->getRawTableName($table);
+
+        foreach ($this->db->getSchema()->getTableForeignKeys($rawTableName, true) as $foreignKey) {
+            if ($foreignKey->name === $name) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

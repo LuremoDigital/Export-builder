@@ -3,24 +3,27 @@
     "description": "Reusable CSV, JSON, and XLSX exports for Craft CMS teams that need reporting, migrations, and operational handoffs without custom scripts.",
     "type": "craft-plugin",
     "license": "proprietary",
-    "version": "1.0.0",
     "keywords": [
         "craftcms",
         "craft-cms",
         "plugin",
         "exports",
+        "export",
         "csv",
-        "json"
+        "json",
+        "xlsx",
+        "commerce"
     ],
-    "homepage": "https://github.com/LuukRM2000/Data-export-builder",
+    "homepage": "https://github.com/LuremoDigital/Data-export-builder",
     "support": {
-        "issues": "https://github.com/LuukRM2000/Data-export-builder/issues",
-        "source": "https://github.com/LuukRM2000/Data-export-builder"
+        "issues": "https://github.com/LuremoDigital/Data-export-builder/issues",
+        "source": "https://github.com/LuremoDigital/Data-export-builder"
     },
     "require": {
         "php": "^8.2",
         "craftcms/cms": "^5.0",
-        "ext-json": "*"
+        "ext-json": "*",
+        "phpoffice/phpspreadsheet": "^5.0"
     },
     "require-dev": {
         "phpunit/phpunit": "^10.5"
@@ -44,9 +47,9 @@
         "class": "Luremo\\DataExportBuilder\\Plugin",
         "description": "Build reusable CSV, JSON, and XLSX exports for Craft CMS without custom templates or one-off scripts.",
         "developer": "Luremo",
-        "developerUrl": "https://github.com/LuukRM2000",
-        "documentationUrl": "https://github.com/LuukRM2000/Data-export-builder#readme",
-        "changelogUrl": "https://github.com/LuukRM2000/Data-export-builder/blob/main/CHANGELOG.md",
+        "developerUrl": "https://github.com/LuremoDigital",
+        "documentationUrl": "https://github.com/LuremoDigital/Data-export-builder#readme",
+        "changelogUrl": "https://github.com/LuremoDigital/Data-export-builder/blob/main/CHANGELOG.md",
         "pluginStoreUrl": "https://plugins.craftcms.com/data-export-builder"
     },
     "config": {

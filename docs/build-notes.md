@@ -18,4 +18,4 @@
 - add richer Matrix flattening rules for edge-case content models
 - verify Commerce order layout discovery against the installed Commerce version
 
-See [docs/release-readiness-checklist.md](/Users/luukmolenbeek/Developer/Data-export-builder/docs/release-readiness-checklist.md) for the operationalized Phase 1 version of this list.
+See [release-readiness-checklist.md](release-readiness-checklist.md) for the operationalized Phase 1 version of this list.

@@ -1,17 +1,42 @@
-# Data Export Builder Commercial License
+# Craft License
 
-Copyright (c) 2026 Luremo
+Copyright © 2026 Luremo
 
-This software is licensed, not sold.
+Permission is hereby granted to any person obtaining a copy of this software
+(the “Software”) to use, copy, modify, merge, publish and/or distribute copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
 
-By installing, copying, or using Data Export Builder, you agree to the following terms:
+1. **Don’t plagiarize.** The above copyright notice and this license shall be
+   included in all copies or substantial portions of the Software.
 
-1. A valid commercial license is required for each production Craft installation that uses the plugin.
-2. Development, staging, and local environments for the same project are permitted under the corresponding production license.
-3. You may not redistribute, resell, sublicense, publish, or make the source code available to third parties except as required for normal project delivery to the licensed site owner.
-4. You may modify the source code for your own licensed projects, but those modifications remain subject to this license and may not be redistributed as a competing product.
-5. Support, updates, and renewals are governed by the commercial terms offered at the time of purchase, including any terms enforced through the Craft Plugin Store.
-6. This software is provided "as is", without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose, and non-infringement.
-7. To the maximum extent permitted by law, Luremo will not be liable for any indirect, incidental, special, consequential, or punitive damages, or for any loss of data, revenue, profits, or business interruption arising from the use of this software.
+2. **Don’t use the same license on more than one project.** Each licensed copy
+   of the Software shall be actively installed in no more than one production
+   environment at a time.
 
-If you do not agree to these terms, do not install or use the software.
+3. **Don’t mess with the licensing features.** Software features related to
+   licensing shall not be altered or circumvented in any way, including (but
+   not limited to) license validation, payment prompts, feature restrictions,
+   and update eligibility.
+
+4. **Pay up.** Payment shall be made immediately upon receipt of any notice,
+   prompt, reminder, or other message indicating that a payment is owed.
+
+5. **Follow the law.** All use of the Software shall not violate any applicable
+   law or regulation, nor infringe the rights of any other person or entity.
+
+Failure to comply with the foregoing conditions will automatically and
+immediately result in termination of the permission granted hereby. This
+license does not include any right to receive updates to the Software or
+technical support. Licensees bear all risk related to the quality and
+performance of the Software and any modifications made or obtained to it,
+including liability for actual and consequential harm, such as loss or
+corruption of data, and any necessary service, repair, or correction.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES, OR OTHER
+LIABILITY, INCLUDING SPECIAL, INCIDENTAL AND CONSEQUENTIAL DAMAGES, WHETHER IN
+AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
