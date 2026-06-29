@@ -36,9 +36,6 @@ Built for agencies, freelancers, and in-house Craft teams that repeatedly need c
 
 ## Screenshots
 
-> Drop release screenshots into `docs/img/` and uncomment the block below.
-
-<!--
 <p align="center"><img src="docs/img/templates-index.png" alt="Templates index" width="800"></p>
 <p align="center"><em>The Exports index — every saved template, ready to run.</em></p>
 
@@ -50,9 +47,6 @@ Built for agencies, freelancers, and in-house Craft teams that repeatedly need c
 
 <p align="center"><img src="docs/img/commerce-export.png" alt="Commerce order export" width="800"></p>
 <p align="center"><em>A Commerce order export template (Pro).</em></p>
--->
-
-Planned shots for the listing: templates index, template builder with field picker, run history (queued/completed/failed), and a Commerce order export (Pro).
 
 ## Requirements
 
