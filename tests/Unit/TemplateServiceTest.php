@@ -84,4 +84,56 @@ final class TemplateServiceTest extends TestCase
         self::assertCount(1, $template->fields);
         self::assertSame('slug', $template->fields[0]->columnLabel);
     }
+
+    public function testCreateTemplateFromRequestNormalizesAdvancedFiltersAgainstDiscoveryPayload(): void
+    {
+        $service = new TemplateService();
+
+        $template = $service->createTemplateFromRequest([
+            'name' => 'Filtered Entries',
+            'filters' => [
+                'statuses' => ['live', 'deleted'],
+                'keyword' => ' annual report ',
+                'fieldConditions' => [
+                    ['field' => 'title', 'operator' => 'contains', 'value' => 'Board'],
+                    ['field' => 'body', 'operator' => 'contains', 'value' => 'bad,value'],
+                    ['field' => 'andWhere', 'operator' => 'eq', 'value' => 'x'],
+                ],
+                'relations' => [
+                    ['field' => 'topics', 'targetIds' => '12, 12, no, 15'],
+                    ['field' => 'missing', 'targetIds' => '20'],
+                ],
+            ],
+        ], null, [
+            'supportsStatusFilter' => true,
+            'supportsKeywordFilter' => true,
+            'statuses' => [
+                ['value' => 'live'],
+            ],
+            'filterableFields' => [
+                ['handle' => 'title', 'operators' => [['value' => 'contains']]],
+                ['handle' => 'body', 'operators' => [['value' => 'contains']]],
+                ['handle' => 'andWhere', 'operators' => [['value' => 'eq']]],
+            ],
+            'relationFields' => [
+                ['handle' => 'topics'],
+            ],
+        ]);
+
+        self::assertSame(['live'], $template->filters['statuses']);
+        self::assertSame('annual report', $template->filters['keyword']);
+        self::assertSame([
+            [
+                'field' => 'title',
+                'operator' => 'contains',
+                'value' => 'Board',
+            ],
+        ], $template->filters['fieldConditions']);
+        self::assertSame([
+            [
+                'field' => 'topics',
+                'targetIds' => [12, 15],
+            ],
+        ], $template->filters['relations']);
+    }
 }

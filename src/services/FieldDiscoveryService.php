@@ -14,6 +14,7 @@ use craft\elements\Tag;
 use craft\elements\User;
 use craft\fields\BaseRelationField;
 use craft\fields\Matrix;
+use Luremo\DataExportBuilder\helpers\AdvancedFilterHelper;
 use Luremo\DataExportBuilder\helpers\CapabilityHelper;
 use Luremo\DataExportBuilder\helpers\FieldValueHelper;
 use Luremo\DataExportBuilder\Plugin;
@@ -77,7 +78,14 @@ final class FieldDiscoveryService extends Component
             'supportsSectionFilter' => $elementType === 'entries',
             'supportsSiteFilter' => in_array($elementType, ['entries', 'categories', 'tags', 'assets', CapabilityHelper::ELEMENT_TYPE_PRODUCTS, CapabilityHelper::ELEMENT_TYPE_VARIANTS], true),
             'supportsFormFilter' => $supportsFormFilter,
+            'supportsStatusFilter' => $this->supportsStatusFilter($elementType),
+            'supportsKeywordFilter' => $this->supportsKeywordFilter($elementType),
+            'supportsFieldConditionFilter' => $this->supportsFieldConditionFilter($elementType),
+            'supportsRelationFilter' => $this->supportsRelationFilter($elementType),
             'supportsPopulatedFilter' => $supportsPopulatedFilter,
+            'statuses' => $this->getStatusOptions($elementType),
+            'filterableFields' => $this->getFilterableFields($elementType, $sectionUid),
+            'relationFields' => $this->getRelationFilterFields($elementType, $sectionUid),
             'onlyPopulated' => $supportsPopulatedFilter ? $onlyPopulated : false,
         ];
     }
@@ -766,7 +774,212 @@ final class FieldDiscoveryService extends Component
         return match (true) {
             $field instanceof BaseRelationField => 'relation',
             $field instanceof Matrix => 'matrix',
+            is_a($field, \craft\fields\PlainText::class) => 'text',
+            is_a($field, \craft\fields\Email::class) => 'text',
+            is_a($field, \craft\fields\Url::class) => 'text',
+            is_a($field, \craft\fields\Color::class) => 'text',
+            is_a($field, \craft\fields\Number::class) => 'number',
+            is_a($field, \craft\fields\Date::class) => 'date',
+            is_a($field, \craft\fields\Lightswitch::class) => 'boolean',
+            is_a($field, \craft\fields\Dropdown::class) => 'option',
+            is_a($field, \craft\fields\RadioButtons::class) => 'option',
+            is_a($field, \craft\fields\Checkboxes::class) => 'option',
+            is_a($field, \craft\fields\MultiSelect::class) => 'option',
             default => 'field',
         };
+    }
+
+    private function supportsStatusFilter(string $elementType): bool
+    {
+        return !in_array($elementType, [
+            CapabilityHelper::ELEMENT_TYPE_WHEELFORM_SUBMISSIONS,
+            CapabilityHelper::ELEMENT_TYPE_FORMIE_SUBMISSIONS,
+        ], true);
+    }
+
+    private function supportsKeywordFilter(string $elementType): bool
+    {
+        return $elementType !== CapabilityHelper::ELEMENT_TYPE_WHEELFORM_SUBMISSIONS;
+    }
+
+    private function supportsFieldConditionFilter(string $elementType): bool
+    {
+        return !in_array($elementType, [
+            CapabilityHelper::ELEMENT_TYPE_WHEELFORM_SUBMISSIONS,
+            CapabilityHelper::ELEMENT_TYPE_FORMIE_SUBMISSIONS,
+        ], true);
+    }
+
+    private function supportsRelationFilter(string $elementType): bool
+    {
+        return $this->supportsFieldConditionFilter($elementType);
+    }
+
+    /**
+     * @return array<int, array{label:string,value:string}>
+     */
+    private function getStatusOptions(string $elementType): array
+    {
+        if (!$this->supportsStatusFilter($elementType)) {
+            return [];
+        }
+
+        if ($elementType === 'users') {
+            return [
+                ['label' => 'Active', 'value' => 'active'],
+                ['label' => 'Suspended', 'value' => 'suspended'],
+                ['label' => 'Pending', 'value' => 'pending'],
+            ];
+        }
+
+        if ($elementType === 'orders' && CapabilityHelper::isCommerceInstalled() && class_exists(\craft\commerce\Plugin::class)) {
+            $statuses = [];
+            $orderStatuses = \craft\commerce\Plugin::getInstance()?->getOrderStatuses()->getAllOrderStatuses() ?? [];
+            foreach ($orderStatuses as $status) {
+                $handle = trim((string)($status->handle ?? ''));
+                if ($handle !== '') {
+                    $statuses[] = [
+                        'label' => (string)($status->name ?? $handle),
+                        'value' => $handle,
+                    ];
+                }
+            }
+
+            return $statuses;
+        }
+
+        if (in_array($elementType, ['entries', CapabilityHelper::ELEMENT_TYPE_PRODUCTS], true)) {
+            return [
+                ['label' => 'Live', 'value' => 'live'],
+                ['label' => 'Pending', 'value' => 'pending'],
+                ['label' => 'Expired', 'value' => 'expired'],
+                ['label' => 'Disabled', 'value' => 'disabled'],
+            ];
+        }
+
+        return [
+            ['label' => 'Enabled', 'value' => 'enabled'],
+            ['label' => 'Disabled', 'value' => 'disabled'],
+        ];
+    }
+
+    /**
+     * @return array<int, array{handle:string,label:string,group:string,type:string,operators:array<int, array{value:string,label:string}>}>
+     */
+    private function getFilterableFields(string $elementType, ?string $sectionUid): array
+    {
+        if (!$this->supportsFieldConditionFilter($elementType)) {
+            return [];
+        }
+
+        $definitions = [];
+        foreach ($this->nativeFilterableFieldDefinitions($elementType) as $definition) {
+            $definitions[$definition['handle']] = $definition;
+        }
+
+        foreach ($this->fieldLayoutsForElementType($elementType, $sectionUid) as $layout) {
+            if ($layout === null || !method_exists($layout, 'getCustomFields')) {
+                continue;
+            }
+
+            foreach ($layout->getCustomFields() as $field) {
+                if (!$field instanceof FieldInterface) {
+                    continue;
+                }
+
+                $type = $this->detectFieldType($field);
+                $operators = AdvancedFilterHelper::operatorsForType($type);
+                if ($operators === [] || !AdvancedFilterHelper::isSafeHandle($field->handle)) {
+                    continue;
+                }
+
+                $definitions[$field->handle] = [
+                    'handle' => $field->handle,
+                    'label' => $field->name,
+                    'group' => 'Custom Fields',
+                    'type' => $type,
+                    'operators' => $operators,
+                ];
+            }
+        }
+
+        ksort($definitions);
+
+        return array_values($definitions);
+    }
+
+    /**
+     * @return array<int, array{handle:string,label:string,group:string,type:string,operators:array<int, array{value:string,label:string}>}>
+     */
+    private function nativeFilterableFieldDefinitions(string $elementType): array
+    {
+        $allowedHandles = match ($elementType) {
+            'entries' => ['title', 'slug', 'uri'],
+            'users' => ['username', 'email', 'fullName', 'friendlyName'],
+            'categories', 'tags' => ['title', 'slug', 'uri'],
+            'assets' => ['title', 'filename', 'kind', 'mimeType'],
+            'orders' => ['number', 'reference', 'email', 'currency', 'isCompleted'],
+            CapabilityHelper::ELEMENT_TYPE_PRODUCTS => ['title', 'slug', 'uri'],
+            CapabilityHelper::ELEMENT_TYPE_VARIANTS => ['title', 'sku', 'price', 'stock', 'isAvailable'],
+            default => [],
+        };
+
+        $definitions = [];
+        foreach ($this->nativeFieldDefinitions($elementType) as $definition) {
+            $handle = (string)($definition['path'] ?? '');
+            $type = (string)($definition['type'] ?? 'field');
+            if (!in_array($handle, $allowedHandles, true) || !AdvancedFilterHelper::isSafeHandle($handle)) {
+                continue;
+            }
+
+            $operators = AdvancedFilterHelper::operatorsForType($type);
+            if ($operators === []) {
+                continue;
+            }
+
+            $definitions[] = [
+                'handle' => $handle,
+                'label' => (string)$definition['label'],
+                'group' => (string)$definition['group'],
+                'type' => $type,
+                'operators' => $operators,
+            ];
+        }
+
+        return $definitions;
+    }
+
+    /**
+     * @return array<int, array{handle:string,label:string,targetElementType:string}>
+     */
+    private function getRelationFilterFields(string $elementType, ?string $sectionUid): array
+    {
+        if (!$this->supportsRelationFilter($elementType)) {
+            return [];
+        }
+
+        $fields = [];
+        foreach ($this->fieldLayoutsForElementType($elementType, $sectionUid) as $layout) {
+            if ($layout === null || !method_exists($layout, 'getCustomFields')) {
+                continue;
+            }
+
+            foreach ($layout->getCustomFields() as $field) {
+                if (!$field instanceof BaseRelationField || !AdvancedFilterHelper::isSafeHandle($field->handle)) {
+                    continue;
+                }
+
+                $elementTypeClass = method_exists($field, 'elementType') ? $field->elementType() : ($field->elementType ?? '');
+                $fields[$field->handle] = [
+                    'handle' => $field->handle,
+                    'label' => $field->name,
+                    'targetElementType' => is_string($elementTypeClass) ? $elementTypeClass : '',
+                ];
+            }
+        }
+
+        ksort($fields);
+
+        return array_values($fields);
     }
 }

@@ -10,6 +10,19 @@
 {% set formId = template.filters.formId ?? '' %}
 {% set dateFrom = template.filters.dateFrom ?? '' %}
 {% set dateTo = template.filters.dateTo ?? '' %}
+{% set statuses = template.filters.statuses ?? [] %}
+{% set keyword = template.filters.keyword ?? '' %}
+{% set fieldConditions = template.filters.fieldConditions ?? [] %}
+{% set relations = template.filters.relations ?? [] %}
+{% set advancedFilterCount = fieldConditions|length + relations|length %}
+{% set filterableFieldHandles = [] %}
+{% for field in fieldPayload.filterableFields ?? [] %}
+    {% set filterableFieldHandles = filterableFieldHandles|merge([field.handle]) %}
+{% endfor %}
+{% set relationFieldHandles = [] %}
+{% for field in fieldPayload.relationFields ?? [] %}
+    {% set relationFieldHandles = relationFieldHandles|merge([field.handle]) %}
+{% endfor %}
 {% set isProEdition = isProEdition ?? false %}
 {% set schedule = template.settings.schedule ?? {} %}
 {% set delivery = template.settings.delivery ?? {} %}
@@ -129,6 +142,27 @@
                                 }) }}
                             </div>
 
+                            <div data-status-filter-row>
+                                {{ forms.multiselectField({
+                                    label: 'Status Filter',
+                                    id: 'statuses',
+                                    name: 'filters[statuses]',
+                                    options: fieldPayload.statuses ?? [],
+                                    values: statuses,
+                                    instructions: 'Optional. Leave empty to include all statuses.'
+                                }) }}
+                            </div>
+
+                            <div data-keyword-filter-row>
+                                {{ forms.textField({
+                                    label: 'Keyword Search',
+                                    id: 'keyword',
+                                    name: 'filters[keyword]',
+                                    value: keyword,
+                                    instructions: 'Optional. Filters matching indexed content; export order is unchanged.'
+                                }) }}
+                            </div>
+
                             <div class="field">
                                 <div class="heading">
                                     <label id="dateFrom-label" for="dateFrom">Created From</label>
@@ -187,6 +221,85 @@
                             </div>
                         {% endif %}
                     </div>
+
+                    <section class="deb-card deb-card--subtle{% if not (fieldPayload.supportsFieldConditionFilter ?? false) and not (fieldPayload.supportsRelationFilter ?? false) %} hidden{% endif %}" data-advanced-filter-card>
+                        <div class="deb-card__header deb-card__header--inline">
+                            <div>
+                                <h2>Advanced filters{% if advancedFilterCount %} <span class="deb-count-badge">{{ advancedFilterCount }}</span>{% endif %}</h2>
+                                <p>Match custom-field values or require relations before rows enter the export.</p>
+                            </div>
+                            <button type="button" class="btn small" data-advanced-filter-toggle aria-expanded="{{ advancedFilterCount ? 'true' : 'false' }}">{{ advancedFilterCount ? 'Hide' : 'Show' }}</button>
+                        </div>
+
+                        <div class="{% if not advancedFilterCount %}hidden {% endif %}deb-stack" data-advanced-filter-body>
+                            <div class="deb-filter-state hidden" data-filter-loading>Loading filter options...</div>
+                            <div class="deb-filter-state deb-filter-state--error hidden" data-filter-error>
+                                <span>Filter options could not be loaded.</span>
+                                <button type="button" class="btn small" data-filter-retry>Retry</button>
+                            </div>
+
+                            <div data-field-condition-filter-row>
+                                <div class="deb-section-heading">
+                                    <div>
+                                        <h3>Custom-field Conditions</h3>
+                                        <p>All condition rows must match. Contains is only offered for text-like fields.</p>
+                                    </div>
+                                    <button type="button" class="btn small" data-add-field-condition>Add condition</button>
+                                </div>
+
+                                <div class="deb-filter-rows" data-field-condition-rows>
+                                    {% for condition in fieldConditions %}
+                                        <div class="deb-filter-row" data-field-condition-row>
+                                            <select class="select fullwidth" data-filter-field name="filters[fieldConditions][{{ loop.index0 }}][field]">
+                                                <option value="">Select field</option>
+                                                {% for field in fieldPayload.filterableFields ?? [] %}
+                                                    <option value="{{ field.handle }}" data-operators="{{ (field.operators ?? [])|json_encode|e('html_attr') }}"{% if field.handle == condition.field %} selected{% endif %}>{{ field.label }}</option>
+                                                {% endfor %}
+                                                {% if condition.field and condition.field not in filterableFieldHandles %}
+                                                    <option value="{{ condition.field }}" selected data-stale="true">{{ condition.field }} (missing)</option>
+                                                {% endif %}
+                                            </select>
+                                            <select class="select fullwidth" data-filter-operator name="filters[fieldConditions][{{ loop.index0 }}][operator]">
+                                                <option value="{{ condition.operator ?? '' }}" selected>{{ condition.operator ?? 'Operator' }}</option>
+                                            </select>
+                                            <input class="text fullwidth" type="text" data-filter-value name="filters[fieldConditions][{{ loop.index0 }}][value]" value="{{ condition.value ?? '' }}" placeholder="Value">
+                                            <button type="button" class="btn small" data-remove-filter-row>Remove</button>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <p class="light{% if fieldPayload.filterableFields ?? [] %} hidden{% endif %}" data-field-condition-empty>No filterable fields for this element type.</p>
+                            </div>
+
+                            <div data-relation-filter-row>
+                                <div class="deb-section-heading">
+                                    <div>
+                                        <h3>Relation Membership</h3>
+                                        <p>Multiple target IDs in one row match any target. Multiple rows are combined with AND.</p>
+                                    </div>
+                                    <button type="button" class="btn small" data-add-relation-filter>Add relation</button>
+                                </div>
+
+                                <div class="deb-filter-rows" data-relation-filter-rows>
+                                    {% for relation in relations %}
+                                        <div class="deb-filter-row" data-relation-filter-row>
+                                            <select class="select fullwidth" data-relation-field name="filters[relations][{{ loop.index0 }}][field]">
+                                                <option value="">Select relation field</option>
+                                                {% for field in fieldPayload.relationFields ?? [] %}
+                                                    <option value="{{ field.handle }}"{% if field.handle == relation.field %} selected{% endif %}>{{ field.label }}</option>
+                                                {% endfor %}
+                                                {% if relation.field and relation.field not in relationFieldHandles %}
+                                                    <option value="{{ relation.field }}" selected data-stale="true">{{ relation.field }} (missing)</option>
+                                                {% endif %}
+                                            </select>
+                                            <input class="text fullwidth" type="text" data-relation-targets name="filters[relations][{{ loop.index0 }}][targetIds]" value="{{ (relation.targetIds ?? [])|join(',') }}" placeholder="Target element IDs">
+                                            <button type="button" class="btn small" data-remove-filter-row>Remove</button>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                <p class="light{% if fieldPayload.relationFields ?? [] %} hidden{% endif %}" data-relation-filter-empty>No relation fields on this element type.</p>
+                            </div>
+                        </div>
+                    </section>
 
                     {% include 'data-export-builder/_cp/exports/_includes/field-picker' with {
                         fieldPayload: fieldPayload,

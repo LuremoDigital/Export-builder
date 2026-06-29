@@ -256,15 +256,38 @@
         select.value = nextValue;
     }
 
+    function syncMultiSelectOptions(select, options) {
+        if (!select) {
+            return;
+        }
+
+        const selected = new Set(Array.from(select.selectedOptions || []).map((option) => String(option.value || '')));
+        const normalizedOptions = Array.isArray(options) ? options : [];
+        select.innerHTML = normalizedOptions.map((option) => {
+            const value = String(option.value ?? '');
+            const label = String(option.label ?? value);
+            const isSelected = selected.has(value);
+
+            return '<option value="' + escapeHtml(value) + '"' + (isSelected ? ' selected' : '') + '>' + escapeHtml(label) + '</option>';
+        }).join('');
+    }
+
+    function optionValues(options) {
+        return new Set((Array.isArray(options) ? options : []).map((option) => String(option.value ?? option.handle ?? '')));
+    }
+
     function syncFilterOptions(root) {
         const payload = root._payload || {};
         const sectionSelect = document.querySelector(root.dataset.sectionSelect || '');
         const siteSelect = document.querySelector(root.dataset.siteFilterTarget || '')?.querySelector('select');
         const formSelect = document.querySelector(root.dataset.formSelect || '');
+        const statusSelect = document.querySelector(root.dataset.statusFilterTarget || '')?.querySelector('select');
 
         syncSelectOptions(sectionSelect, payload.sections || [], sectionSelect?.value);
         syncSelectOptions(siteSelect, payload.sites || [], siteSelect?.value);
         syncSelectOptions(formSelect, payload.forms || [], formSelect?.value);
+        syncMultiSelectOptions(statusSelect, payload.statuses || []);
+        syncAdvancedFilterOptions(root);
     }
 
     function updateFilterVisibility(root) {
@@ -272,6 +295,11 @@
         const sectionRow = document.querySelector(root.dataset.sectionFilterTarget || '');
         const siteRow = document.querySelector(root.dataset.siteFilterTarget || '');
         const formRow = document.querySelector(root.dataset.formFilterTarget || '');
+        const statusRow = document.querySelector(root.dataset.statusFilterTarget || '');
+        const keywordRow = document.querySelector(root.dataset.keywordFilterTarget || '');
+        const fieldConditionRow = document.querySelector(root.dataset.fieldConditionFilterTarget || '');
+        const relationRow = document.querySelector(root.dataset.relationFilterTarget || '');
+        const advancedCard = document.querySelector(root.dataset.advancedFilterCard || '');
         const populatedToggle = root.querySelector(root.dataset.populatedToggle || '');
 
         if (sectionRow) {
@@ -286,6 +314,26 @@
             formRow.classList.toggle('hidden', !payload.supportsFormFilter);
         }
 
+        if (statusRow) {
+            statusRow.classList.toggle('hidden', !payload.supportsStatusFilter);
+        }
+
+        if (keywordRow) {
+            keywordRow.classList.toggle('hidden', !payload.supportsKeywordFilter);
+        }
+
+        if (fieldConditionRow) {
+            fieldConditionRow.classList.toggle('hidden', !payload.supportsFieldConditionFilter);
+        }
+
+        if (relationRow) {
+            relationRow.classList.toggle('hidden', !payload.supportsRelationFilter);
+        }
+
+        if (advancedCard) {
+            advancedCard.classList.toggle('hidden', !payload.supportsFieldConditionFilter && !payload.supportsRelationFilter);
+        }
+
         if (populatedToggle) {
             populatedToggle.checked = !!payload.onlyPopulated;
             populatedToggle.closest('label')?.classList.toggle('hidden', !payload.supportsPopulatedFilter);
@@ -293,6 +341,197 @@
                 populatedToggle.checked = false;
             }
         }
+    }
+
+    function setFilterLoading(root, isLoading) {
+        const card = document.querySelector(root.dataset.advancedFilterCard || '');
+        const loading = card?.querySelector('[data-filter-loading]');
+        const error = card?.querySelector('[data-filter-error]');
+
+        root.classList.toggle('is-loading', isLoading);
+        if (loading) {
+            loading.classList.toggle('hidden', !isLoading);
+        }
+        if (error && isLoading) {
+            error.classList.add('hidden');
+        }
+
+        if (card) {
+            card.querySelectorAll('input, select, button').forEach(function (field) {
+                if (field.hasAttribute('data-filter-retry')) {
+                    return;
+                }
+
+                field.disabled = isLoading;
+            });
+        }
+    }
+
+    function showFilterError(root) {
+        const card = document.querySelector(root.dataset.advancedFilterCard || '');
+        card?.querySelector('[data-filter-error]')?.classList.remove('hidden');
+    }
+
+    function createOptionHtml(value, label, selected, attrs) {
+        return '<option value="' + escapeHtml(value) + '"' + (selected ? ' selected' : '') + (attrs || '') + '>' + escapeHtml(label) + '</option>';
+    }
+
+    function fieldOptionsHtml(fields, currentValue) {
+        const handles = optionValues(fields);
+        let html = createOptionHtml('', 'Select field', !currentValue);
+        (Array.isArray(fields) ? fields : []).forEach(function (field) {
+            html += createOptionHtml(
+                String(field.handle || ''),
+                String(field.label || field.handle || ''),
+                String(field.handle || '') === String(currentValue || ''),
+                ' data-operators="' + escapeHtml(JSON.stringify(field.operators || [])) + '"'
+            );
+        });
+
+        if (currentValue && !handles.has(String(currentValue))) {
+            html += createOptionHtml(String(currentValue), String(currentValue) + ' (missing)', true, ' data-stale="true"');
+        }
+
+        return html;
+    }
+
+    function relationOptionsHtml(fields, currentValue) {
+        const handles = optionValues(fields);
+        let html = createOptionHtml('', 'Select relation field', !currentValue);
+        (Array.isArray(fields) ? fields : []).forEach(function (field) {
+            html += createOptionHtml(
+                String(field.handle || ''),
+                String(field.label || field.handle || ''),
+                String(field.handle || '') === String(currentValue || '')
+            );
+        });
+
+        if (currentValue && !handles.has(String(currentValue))) {
+            html += createOptionHtml(String(currentValue), String(currentValue) + ' (missing)', true, ' data-stale="true"');
+        }
+
+        return html;
+    }
+
+    function operatorOptionsForField(fieldSelect) {
+        const selectedOption = fieldSelect?.selectedOptions?.[0];
+        return parseJson(selectedOption?.dataset.operators || '[]', []);
+    }
+
+    function syncOperatorSelect(row) {
+        const fieldSelect = row.querySelector('[data-filter-field]');
+        const operatorSelect = row.querySelector('[data-filter-operator]');
+        const valueInput = row.querySelector('[data-filter-value]');
+        if (!operatorSelect) {
+            return;
+        }
+
+        const current = operatorSelect.value;
+        const operators = operatorOptionsForField(fieldSelect);
+        const values = optionValues(operators);
+        const nextValue = values.has(current) ? current : String(operators[0]?.value || '');
+        operatorSelect.disabled = operators.length === 0;
+        operatorSelect.innerHTML = operators.map(function (operator) {
+            return createOptionHtml(String(operator.value || ''), String(operator.label || operator.value || ''), String(operator.value || '') === nextValue);
+        }).join('');
+        operatorSelect.value = nextValue;
+
+        if (valueInput) {
+            valueInput.classList.toggle('hidden', nextValue === 'notEmpty');
+            valueInput.disabled = nextValue === 'notEmpty' || operators.length === 0;
+        }
+    }
+
+    function syncAdvancedFilterOptions(root) {
+        const payload = root._payload || {};
+        const card = document.querySelector(root.dataset.advancedFilterCard || '');
+        if (!card) {
+            return;
+        }
+
+        const filterableFields = payload.filterableFields || [];
+        const relationFields = payload.relationFields || [];
+
+        card.querySelectorAll('[data-field-condition-row]').forEach(function (row) {
+            const select = row.querySelector('[data-filter-field]');
+            if (select) {
+                select.innerHTML = fieldOptionsHtml(filterableFields, select.value);
+            }
+            syncOperatorSelect(row);
+        });
+
+        card.querySelectorAll('[data-relation-filter-row]').forEach(function (row) {
+            const select = row.querySelector('[data-relation-field]');
+            if (select) {
+                select.innerHTML = relationOptionsHtml(relationFields, select.value);
+            }
+        });
+
+        card.querySelector('[data-field-condition-empty]')?.classList.toggle('hidden', filterableFields.length > 0);
+        card.querySelector('[data-relation-filter-empty]')?.classList.toggle('hidden', relationFields.length > 0);
+    }
+
+    function renumberAdvancedFilters(root) {
+        const card = document.querySelector(root.dataset.advancedFilterCard || '');
+        if (!card) {
+            return;
+        }
+
+        card.querySelectorAll('[data-field-condition-row]').forEach(function (row, index) {
+            row.querySelector('[data-filter-field]').name = 'filters[fieldConditions][' + index + '][field]';
+            row.querySelector('[data-filter-operator]').name = 'filters[fieldConditions][' + index + '][operator]';
+            row.querySelector('[data-filter-value]').name = 'filters[fieldConditions][' + index + '][value]';
+        });
+
+        card.querySelectorAll('[data-relation-filter-row]').forEach(function (row, index) {
+            row.querySelector('[data-relation-field]').name = 'filters[relations][' + index + '][field]';
+            row.querySelector('[data-relation-targets]').name = 'filters[relations][' + index + '][targetIds]';
+        });
+    }
+
+    function createFieldConditionRow(root) {
+        const row = document.createElement('div');
+        row.className = 'deb-filter-row';
+        row.dataset.fieldConditionRow = 'true';
+        row.innerHTML = [
+            '<select class="select fullwidth" data-filter-field></select>',
+            '<select class="select fullwidth" data-filter-operator></select>',
+            '<input class="text fullwidth" type="text" data-filter-value placeholder="Value">',
+            '<button type="button" class="btn small" data-remove-filter-row>Remove</button>'
+        ].join('');
+
+        row.querySelector('[data-filter-field]').innerHTML = fieldOptionsHtml(root._payload?.filterableFields || [], '');
+        syncOperatorSelect(row);
+
+        return row;
+    }
+
+    function createRelationFilterRow(root) {
+        const row = document.createElement('div');
+        row.className = 'deb-filter-row';
+        row.dataset.relationFilterRow = 'true';
+        row.innerHTML = [
+            '<select class="select fullwidth" data-relation-field></select>',
+            '<input class="text fullwidth" type="text" data-relation-targets placeholder="Target element IDs">',
+            '<button type="button" class="btn small" data-remove-filter-row>Remove</button>'
+        ].join('');
+
+        row.querySelector('[data-relation-field]').innerHTML = relationOptionsHtml(root._payload?.relationFields || [], '');
+
+        return row;
+    }
+
+    function setAdvancedBodyVisible(root, isVisible) {
+        const card = document.querySelector(root.dataset.advancedFilterCard || '');
+        const body = card?.querySelector('[data-advanced-filter-body]');
+        const toggle = card?.querySelector('[data-advanced-filter-toggle]');
+        if (!body || !toggle) {
+            return;
+        }
+
+        body.classList.toggle('hidden', !isVisible);
+        toggle.textContent = isVisible ? 'Hide' : 'Show';
+        toggle.setAttribute('aria-expanded', isVisible ? 'true' : 'false');
     }
 
     function loadPayload(root, elementType) {
@@ -311,6 +550,7 @@
             url.searchParams.set('onlyPopulated', '1');
         }
 
+        setFilterLoading(root, true);
         fetch(url.toString(), {
             headers: {
                 'Accept': 'application/json',
@@ -318,13 +558,24 @@
             },
             credentials: 'same-origin'
         })
-            .then((response) => response.json())
+            .then((response) => {
+                if (!response.ok) {
+                    throw new Error('Field discovery failed.');
+                }
+
+                return response.json();
+            })
             .then((payload) => {
                 root._payload = payload;
                 syncFilterOptions(root);
                 renderAvailableFields(root);
                 updateFilterVisibility(root);
                 renderPresets(root);
+                setFilterLoading(root, false);
+            })
+            .catch(() => {
+                setFilterLoading(root, false);
+                showFilterError(root);
             });
     }
 
@@ -334,6 +585,8 @@
         renumberRows(root);
         renderAvailableFields(root);
         updateFilterVisibility(root);
+        syncAdvancedFilterOptions(root);
+        renumberAdvancedFilters(root);
         renderPresets(root);
 
         const elementSelect = document.querySelector(root.dataset.elementSelect || '');
@@ -423,6 +676,56 @@
 
             renumberRows(root);
             renderAvailableFields(root);
+        });
+
+        const advancedCard = document.querySelector(root.dataset.advancedFilterCard || '');
+        advancedCard?.addEventListener('click', function (event) {
+            const target = event.target.closest('button');
+            if (!target) {
+                return;
+            }
+
+            if (target.hasAttribute('data-advanced-filter-toggle')) {
+                const body = advancedCard.querySelector('[data-advanced-filter-body]');
+                setAdvancedBodyVisible(root, body?.classList.contains('hidden'));
+                return;
+            }
+
+            if (target.hasAttribute('data-filter-retry')) {
+                const currentElementType = elementSelect ? elementSelect.value : (root._payload?.elementType || 'entries');
+                loadPayload(root, currentElementType);
+                return;
+            }
+
+            if (target.hasAttribute('data-add-field-condition')) {
+                advancedCard.querySelector('[data-field-condition-rows]')?.appendChild(createFieldConditionRow(root));
+                setAdvancedBodyVisible(root, true);
+                renumberAdvancedFilters(root);
+                return;
+            }
+
+            if (target.hasAttribute('data-add-relation-filter')) {
+                advancedCard.querySelector('[data-relation-filter-rows]')?.appendChild(createRelationFilterRow(root));
+                setAdvancedBodyVisible(root, true);
+                renumberAdvancedFilters(root);
+                return;
+            }
+
+            if (target.hasAttribute('data-remove-filter-row')) {
+                target.closest('.deb-filter-row')?.remove();
+                renumberAdvancedFilters(root);
+            }
+        });
+
+        advancedCard?.addEventListener('change', function (event) {
+            const row = event.target.closest('[data-field-condition-row]');
+            if (row && event.target.hasAttribute('data-filter-field')) {
+                syncOperatorSelect(row);
+            }
+
+            if (row && event.target.hasAttribute('data-filter-operator')) {
+                syncOperatorSelect(row);
+            }
         });
 
         root.addEventListener('dragstart', function (event) {

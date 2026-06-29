@@ -11,6 +11,8 @@ use craft\elements\db\ElementQueryInterface;
 use craft\helpers\Db;
 use Luremo\DataExportBuilder\helpers\CapabilityHelper;
 use Luremo\DataExportBuilder\helpers\ExportFileHelper;
+use Luremo\DataExportBuilder\helpers\FilterApplier;
+use Luremo\DataExportBuilder\helpers\FilterSpecMapper;
 use Luremo\DataExportBuilder\helpers\FieldValueHelper;
 use Luremo\DataExportBuilder\jobs\RunExportJob;
 use Luremo\DataExportBuilder\models\ExportField;
@@ -232,6 +234,12 @@ final class ExportService extends Component
             }
             $query->dateCreated($range);
         }
+
+        if (method_exists($query, 'orderBy')) {
+            $query->orderBy(['elements.dateCreated' => SORT_DESC, 'elements.id' => SORT_DESC]);
+        }
+
+        $this->applyAdvancedFilters($query, $template);
 
         return $query;
     }
@@ -536,6 +544,29 @@ final class ExportService extends Component
             $query->dateCreated($range);
         }
 
+        $this->applyAdvancedFilters($query, $template);
+
         return $query;
+    }
+
+    private function applyAdvancedFilters(mixed $query, ExportTemplate $template): void
+    {
+        $fieldPayload = Plugin::$plugin->get('fieldDiscovery')->getDiscoveryPayload(
+            $template->elementType,
+            (string)($template->filters['sectionUid'] ?? ''),
+            false,
+            isset($template->filters['formId']) ? (int)$template->filters['formId'] : null
+        );
+
+        $plan = FilterSpecMapper::toPlan(
+            $template->filters,
+            is_array($fieldPayload['filterableFields'] ?? null) ? $fieldPayload['filterableFields'] : [],
+            is_array($fieldPayload['relationFields'] ?? null) ? $fieldPayload['relationFields'] : [],
+            is_array($fieldPayload['statuses'] ?? null) ? $fieldPayload['statuses'] : [],
+            (bool)($fieldPayload['supportsStatusFilter'] ?? false),
+            (bool)($fieldPayload['supportsKeywordFilter'] ?? false)
+        );
+
+        FilterApplier::applyTo($query, $plan, $template->elementType);
     }
 }

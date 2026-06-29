@@ -8,6 +8,7 @@ use Craft;
 use craft\base\Component;
 use DateTimeInterface;
 use Luremo\DataExportBuilder\helpers\CapabilityHelper;
+use Luremo\DataExportBuilder\helpers\FilterSpecMapper;
 use Luremo\DataExportBuilder\models\ExportField;
 use Luremo\DataExportBuilder\models\ExportRun;
 use Luremo\DataExportBuilder\models\ExportTemplate;
@@ -200,11 +201,12 @@ final class TemplateService extends Component
         return $duplicate;
     }
 
-    public function createTemplateFromRequest(array $payload, ?ExportTemplate $template = null): ExportTemplate
+    public function createTemplateFromRequest(array $payload, ?ExportTemplate $template = null, array $fieldPayload = []): ExportTemplate
     {
         $template ??= new ExportTemplate();
         $existingSettings = $template->settings;
         $settingsPayload = is_array($payload['settings'] ?? null) ? $payload['settings'] : [];
+        $filtersPayload = is_array($payload['filters'] ?? null) ? $payload['filters'] : [];
         $schedulePayload = is_array($settingsPayload['schedule'] ?? null) ? $settingsPayload['schedule'] : [];
         $deliveryPayload = is_array($settingsPayload['delivery'] ?? null) ? $settingsPayload['delivery'] : [];
         $scheduleFrequency = in_array(($schedulePayload['frequency'] ?? 'daily'), ['hourly', 'daily', 'weekly'], true)
@@ -215,13 +217,7 @@ final class TemplateService extends Component
         $template->handle = $this->generateHandle($requestedHandle !== '' ? $requestedHandle : $template->name);
         $template->elementType = (string)($payload['elementType'] ?? 'entries');
         $template->format = (string)($payload['format'] ?? 'csv');
-        $template->filters = [
-            'sectionUid' => $payload['filters']['sectionUid'] ?? null,
-            'siteUid' => $payload['filters']['siteUid'] ?? null,
-            'formId' => $this->normalizeIntegerInput($payload['filters']['formId'] ?? null),
-            'dateFrom' => $this->normalizeDateInput($payload['filters']['dateFrom'] ?? null),
-            'dateTo' => $this->normalizeDateInput($payload['filters']['dateTo'] ?? null),
-        ];
+        $template->filters = $this->normalizeFilters($filtersPayload, $fieldPayload);
         $template->settings = [
             'queueThreshold' => (int)($settingsPayload['queueThreshold'] ?? 1000),
             'schedule' => [
@@ -245,6 +241,39 @@ final class TemplateService extends Component
         $template->fields = $this->hydrateFieldsFromRequest($payload['fields'] ?? []);
 
         return $template;
+    }
+
+    /**
+     * @param array<string, mixed> $filtersPayload
+     * @param array<string, mixed> $fieldPayload
+     * @return array<string, mixed>
+     */
+    private function normalizeFilters(array $filtersPayload, array $fieldPayload): array
+    {
+        $advancedPlan = FilterSpecMapper::toPlan(
+            $filtersPayload,
+            is_array($fieldPayload['filterableFields'] ?? null) ? $fieldPayload['filterableFields'] : [],
+            is_array($fieldPayload['relationFields'] ?? null) ? $fieldPayload['relationFields'] : [],
+            is_array($fieldPayload['statuses'] ?? null) ? $fieldPayload['statuses'] : [],
+            (bool)($fieldPayload['supportsStatusFilter'] ?? false),
+            (bool)($fieldPayload['supportsKeywordFilter'] ?? false)
+        );
+
+        return [
+            'sectionUid' => $filtersPayload['sectionUid'] ?? null,
+            'siteUid' => $filtersPayload['siteUid'] ?? null,
+            'formId' => $this->normalizeIntegerInput($filtersPayload['formId'] ?? null),
+            'dateFrom' => $this->normalizeDateInput($filtersPayload['dateFrom'] ?? null),
+            'dateTo' => $this->normalizeDateInput($filtersPayload['dateTo'] ?? null),
+            'statuses' => $advancedPlan['statuses'],
+            'keyword' => $advancedPlan['keyword'],
+            'fieldConditions' => array_map(static fn(array $condition): array => [
+                'field' => $condition['field'],
+                'operator' => $condition['operator'],
+                'value' => $condition['value'],
+            ], $advancedPlan['fieldConditions']),
+            'relations' => $advancedPlan['relations'],
+        ];
     }
 
     public function touchLastRun(int $templateId, string $timestamp): void
