@@ -2,6 +2,8 @@ vendor
 .phpunit.result.cache
 .gstack/
 .idea
+graphify-out/
+CLAUDE.md
 
 # local planning / working notes (not part of the distributed plugin)
 /agents.md

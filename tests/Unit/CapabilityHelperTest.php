@@ -16,6 +16,7 @@ final class CapabilityHelperTest extends TestCase
         self::assertFalse(CapabilityHelper::editionHasFeature(Plugin::EDITION_STANDARD, CapabilityHelper::FEATURE_SCHEDULES));
         self::assertFalse(CapabilityHelper::editionHasFeature(Plugin::EDITION_STANDARD, CapabilityHelper::FEATURE_DELIVERY));
         self::assertFalse(CapabilityHelper::editionHasFeature(Plugin::EDITION_STANDARD, CapabilityHelper::FEATURE_ADVANCED_QUEUE));
+        self::assertFalse(CapabilityHelper::editionHasFeature(Plugin::EDITION_STANDARD, CapabilityHelper::FEATURE_FORM_SUBMISSIONS));
     }
 
     public function testProEditionIncludesOperationalFeatures(): void
@@ -24,6 +25,7 @@ final class CapabilityHelperTest extends TestCase
         self::assertTrue(CapabilityHelper::editionHasFeature(Plugin::EDITION_PRO, CapabilityHelper::FEATURE_SCHEDULES));
         self::assertTrue(CapabilityHelper::editionHasFeature(Plugin::EDITION_PRO, CapabilityHelper::FEATURE_DELIVERY));
         self::assertTrue(CapabilityHelper::editionHasFeature(Plugin::EDITION_PRO, CapabilityHelper::FEATURE_ADVANCED_QUEUE));
+        self::assertTrue(CapabilityHelper::editionHasFeature(Plugin::EDITION_PRO, CapabilityHelper::FEATURE_FORM_SUBMISSIONS));
     }
 
     public function testFormatSupportMatchesEdition(): void

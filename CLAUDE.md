@@ -8,6 +8,7 @@ Key routing rules:
 - Architecture -> invoke /plan-eng-review
 - Design system/plan review -> invoke /design-consultation or /plan-design-review
 - Full review pipeline -> invoke /autoplan
+- Codebase architecture, file relationships, or project-content questions -> invoke /graphify
 - Bugs/errors -> invoke /investigate
 - QA/testing site behavior -> invoke /qa or /qa-only
 - Code review/diff check -> invoke /review

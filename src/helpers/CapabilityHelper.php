@@ -19,6 +19,7 @@ final class CapabilityHelper
     public const FEATURE_XLSX = 'xlsx';
     public const FEATURE_SCHEDULES = 'schedules';
     public const FEATURE_DELIVERY = 'delivery';
+    public const FEATURE_FORM_SUBMISSIONS = 'formSubmissions';
     public const ELEMENT_TYPE_WHEELFORM_SUBMISSIONS = 'wheelform-submissions';
     public const ELEMENT_TYPE_FORMIE_SUBMISSIONS = 'formie-submissions';
     public const ELEMENT_TYPE_PRODUCTS = 'products';
@@ -73,7 +74,8 @@ final class CapabilityHelper
             self::FEATURE_ADVANCED_QUEUE,
             self::FEATURE_XLSX,
             self::FEATURE_SCHEDULES,
-            self::FEATURE_DELIVERY => $edition === Plugin::EDITION_PRO,
+            self::FEATURE_DELIVERY,
+            self::FEATURE_FORM_SUBMISSIONS => $edition === Plugin::EDITION_PRO,
             default => true,
         };
     }
@@ -99,11 +101,11 @@ final class CapabilityHelper
         }
 
         if ($handle === self::ELEMENT_TYPE_WHEELFORM_SUBMISSIONS) {
-            return self::isWheelFormInstalled();
+            return self::isWheelFormInstalled() && self::hasFeature(self::FEATURE_FORM_SUBMISSIONS);
         }
 
         if ($handle === self::ELEMENT_TYPE_FORMIE_SUBMISSIONS) {
-            return self::isFormieInstalled();
+            return self::isFormieInstalled() && self::hasFeature(self::FEATURE_FORM_SUBMISSIONS);
         }
 
         return in_array($handle, ['entries', 'users', 'categories', 'tags', 'assets'], true);
