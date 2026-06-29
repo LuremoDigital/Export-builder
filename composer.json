@@ -53,6 +53,9 @@
         "pluginStoreUrl": "https://plugins.craftcms.com/data-export-builder"
     },
     "config": {
+        "platform": {
+            "php": "8.2.0"
+        },
         "sort-packages": true,
         "allow-plugins": {
             "craftcms/plugin-installer": true,
