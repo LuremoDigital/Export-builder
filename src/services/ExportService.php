@@ -9,7 +9,6 @@ use craft\base\Component;
 use craft\base\ElementInterface;
 use craft\elements\db\ElementQueryInterface;
 use craft\helpers\Db;
-use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use Luremo\DataExportBuilder\helpers\CapabilityHelper;
 use Luremo\DataExportBuilder\helpers\ExportFileHelper;
 use Luremo\DataExportBuilder\helpers\FieldValueHelper;
@@ -19,8 +18,8 @@ use Luremo\DataExportBuilder\models\ExportRun;
 use Luremo\DataExportBuilder\models\ExportTemplate;
 use Luremo\DataExportBuilder\Plugin;
 use Luremo\DataExportBuilder\records\ExportRunRecord;
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use OpenSpout\Common\Entity\Row as SpoutRow;
+use OpenSpout\Writer\XLSX\Writer as XlsxWriter;
 use verbb\formie\elements\Form as FormieForm;
 use verbb\formie\elements\Submission as FormieSubmission;
 use wheelform\db\Form as WheelformForm;
@@ -332,35 +331,37 @@ final class ExportService extends Component
         int $total,
         ?callable $progressCallback = null
     ): int {
-        $spreadsheet = new Spreadsheet();
-        $sheet = $spreadsheet->getActiveSheet();
         $fields = $template->getFieldsSorted();
-        $columnWidths = [];
 
-        foreach (array_values($fields) as $index => $field) {
-            $sheet->setCellValue($this->xlsxCellAddress($index + 1, 1), $field->columnLabel);
-            $columnWidths[$index] = $this->estimateColumnWidth($field->columnLabel);
-        }
+        // Stream rows straight to disk with a constant memory footprint. The
+        // previous PhpSpreadsheet implementation built the entire workbook in
+        // memory (one object per cell), which made large operational exports
+        // (tens of thousands of rows) run for minutes and risk OOM in the queue
+        // worker. openspout writes incrementally, so memory stays flat.
+        $writer = new XlsxWriter();
+        $writer->openToFile($filePath);
+
+        $writer->addRow(SpoutRow::fromValues(array_map(
+            static fn(ExportField $field): string => $field->columnLabel,
+            array_values($fields)
+        )));
 
         $processed = 0;
-        $rowNumber = 2;
 
         foreach ($query->batch($this->batchSize) as $elements) {
             foreach ($elements as $element) {
                 $row = $this->buildRow($element, $fields, 'json');
 
-                foreach (array_values($row) as $index => $value) {
+                $cells = [];
+                foreach (array_values($row) as $value) {
                     if (is_array($value)) {
                         $value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
                     }
-
-                    $stringValue = (string)($value ?? '');
-                    $sheet->setCellValue($this->xlsxCellAddress($index + 1, $rowNumber), $stringValue);
-                    $columnWidths[$index] = max($columnWidths[$index] ?? 0, $this->estimateColumnWidth($stringValue));
+                    $cells[] = (string)($value ?? '');
                 }
 
+                $writer->addRow(SpoutRow::fromValues($cells));
                 $processed++;
-                $rowNumber++;
             }
 
             if ($progressCallback !== null) {
@@ -368,19 +369,7 @@ final class ExportService extends Component
             }
         }
 
-        foreach (array_values($fields) as $index => $field) {
-            $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($index + 1))
-                ->setWidth((float)min(max($columnWidths[$index] ?? 12, 12), 60));
-        }
-
-        $visibleColumnCount = count($fields);
-        for ($columnIndex = $visibleColumnCount + 1; $columnIndex <= 16384; $columnIndex++) {
-            $sheet->getColumnDimension(Coordinate::stringFromColumnIndex($columnIndex))->setVisible(false);
-        }
-
-        (new Xlsx($spreadsheet))->save($filePath);
-        $spreadsheet->disconnectWorksheets();
-        unset($spreadsheet);
+        $writer->close();
 
         return $processed;
     }
@@ -410,18 +399,6 @@ final class ExportService extends Component
         }
 
         return $row;
-    }
-
-    private function xlsxCellAddress(int $columnIndex, int $rowNumber): string
-    {
-        return Coordinate::stringFromColumnIndex($columnIndex) . $rowNumber;
-    }
-
-    private function estimateColumnWidth(string $value): int
-    {
-        $length = function_exists('mb_strlen') ? mb_strlen($value) : strlen($value);
-
-        return $length + 2;
     }
 
     private function normalizeDateFilter(mixed $value): ?string
