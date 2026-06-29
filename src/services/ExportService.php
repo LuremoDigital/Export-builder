@@ -221,7 +221,10 @@ final class ExportService extends Component
         $dateFrom = $this->normalizeDateFilter($template->filters['dateFrom'] ?? null);
         $dateTo = $this->normalizeDateFilter($template->filters['dateTo'] ?? null);
         if (($dateFrom || $dateTo) && method_exists($query, 'dateCreated')) {
-            $range = [];
+            // Leading 'and' is required: a Craft element-query array param without
+            // it defaults to OR, so a from+to range would match (after-from OR
+            // before-to) — i.e. almost every record. 'and' makes it a true range.
+            $range = ['and'];
             if ($dateFrom) {
                 $range[] = '>= ' . $dateFrom . ' 00:00:00';
             }
@@ -543,7 +546,10 @@ final class ExportService extends Component
         $dateFrom = $this->normalizeDateFilter($template->filters['dateFrom'] ?? null);
         $dateTo = $this->normalizeDateFilter($template->filters['dateTo'] ?? null);
         if (($dateFrom || $dateTo) && method_exists($query, 'dateCreated')) {
-            $range = [];
+            // Leading 'and' is required: a Craft element-query array param without
+            // it defaults to OR, so a from+to range would match (after-from OR
+            // before-to) — i.e. almost every record. 'and' makes it a true range.
+            $range = ['and'];
             if ($dateFrom) {
                 $range[] = '>= ' . $dateFrom . ' 00:00:00';
             }
