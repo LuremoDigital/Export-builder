@@ -142,7 +142,7 @@
     align-items: center;
 }
 
-[data-relation-filter-row].deb-filter-row {
+[data-relation-row].deb-filter-row {
     grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
 }
 

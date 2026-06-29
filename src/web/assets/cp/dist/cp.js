@@ -460,7 +460,7 @@
             syncOperatorSelect(row);
         });
 
-        card.querySelectorAll('[data-relation-filter-row]').forEach(function (row) {
+        card.querySelectorAll('[data-relation-row]').forEach(function (row) {
             const select = row.querySelector('[data-relation-field]');
             if (select) {
                 select.innerHTML = relationOptionsHtml(relationFields, select.value);
@@ -483,7 +483,7 @@
             row.querySelector('[data-filter-value]').name = 'filters[fieldConditions][' + index + '][value]';
         });
 
-        card.querySelectorAll('[data-relation-filter-row]').forEach(function (row, index) {
+        card.querySelectorAll('[data-relation-row]').forEach(function (row, index) {
             row.querySelector('[data-relation-field]').name = 'filters[relations][' + index + '][field]';
             row.querySelector('[data-relation-targets]').name = 'filters[relations][' + index + '][targetIds]';
         });
@@ -509,7 +509,7 @@
     function createRelationFilterRow(root) {
         const row = document.createElement('div');
         row.className = 'deb-filter-row';
-        row.dataset.relationFilterRow = 'true';
+        row.dataset.relationRow = 'true';
         row.innerHTML = [
             '<select class="select fullwidth" data-relation-field></select>',
             '<input class="text fullwidth" type="text" data-relation-targets placeholder="Target element IDs">',

@@ -281,7 +281,7 @@
 
                                 <div class="deb-filter-rows" data-relation-filter-rows>
                                     {% for relation in relations %}
-                                        <div class="deb-filter-row" data-relation-filter-row>
+                                        <div class="deb-filter-row" data-relation-row>
                                             <select class="select fullwidth" data-relation-field name="filters[relations][{{ loop.index0 }}][field]">
                                                 <option value="">Select relation field</option>
                                                 {% for field in fieldPayload.relationFields ?? [] %}
