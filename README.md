@@ -13,7 +13,7 @@ It is positioned for agencies, freelancers, and in-house Craft teams that repeat
 - output CSV, JSON, or XLSX
 - save export templates for reuse
 - rename and reorder columns
-- filter by section, site, and created date where supported
+- filter by section, site, status, keyword, created date, relations, and selected field values where supported
 - run immediately or queue large exports
 - download completed export files later
 - schedule recurring exports in Pro
@@ -132,7 +132,7 @@ details). Handle the output accordingly:
 
 ## Known Limitations
 
-- V1 supports basic filters only
+- Keyword filters use Craft search to match rows, but exports keep a stable export order rather than search relevance ranking.
 - Matrix flattening is practical, not exhaustive
 - Standard and Pro editions should be set through Craft plugin editions, not environment variables
 

@@ -75,6 +75,77 @@
     color: #5c6b7a;
 }
 
+.deb-card__header--inline,
+.deb-section-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.deb-count-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: #edf4fb;
+    color: #163955;
+    font-size: 12px;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+.deb-section-heading h3 {
+    margin: 0 0 4px;
+    font-size: 15px;
+}
+
+.deb-section-heading p {
+    margin: 0;
+    color: #5c6b7a;
+}
+
+.deb-filter-state {
+    border: 1px solid #d7e2ee;
+    border-radius: 8px;
+    background: #f7f9fc;
+    color: #4c6178;
+    padding: 10px 12px;
+}
+
+.deb-filter-state.hidden {
+    display: none;
+}
+
+.deb-filter-state--error {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-color: #d94d4d;
+    background: #fff5f5;
+    color: #8f2525;
+}
+
+.deb-filter-rows {
+    display: grid;
+    gap: 10px;
+    margin-top: 12px;
+}
+
+.deb-filter-row {
+    display: grid;
+    grid-template-columns: minmax(140px, 1fr) minmax(130px, 0.75fr) minmax(160px, 1fr) auto;
+    gap: 10px;
+    align-items: center;
+}
+
+[data-relation-filter-row].deb-filter-row {
+    grid-template-columns: minmax(180px, 1fr) minmax(180px, 1fr) auto;
+}
+
 .deb-form-grid {
     display: grid;
     gap: 18px;
@@ -310,9 +381,15 @@
 
 @media (max-width: 800px) {
     .deb-form-grid,
+    .deb-filter-row,
     .deb-field-picker,
     .deb-page {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .deb-card__header--inline,
+    .deb-section-heading {
+        display: grid;
     }
 }
 

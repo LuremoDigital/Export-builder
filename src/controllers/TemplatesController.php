@@ -82,9 +82,18 @@ final class TemplatesController extends Controller
             throw new NotFoundHttpException('Export template not found.');
         }
 
+        $bodyParams = $request->getBodyParams();
+        $filters = is_array($bodyParams['filters'] ?? null) ? $bodyParams['filters'] : [];
+        $fieldPayload = Plugin::$plugin->get('fieldDiscovery')->getDiscoveryPayload(
+            (string)($bodyParams['elementType'] ?? $existing?->elementType ?? 'entries'),
+            (string)($filters['sectionUid'] ?? ''),
+            false,
+            isset($filters['formId']) ? (int)$filters['formId'] : null
+        );
         $template = Plugin::$plugin->get('templates')->createTemplateFromRequest(
-            $request->getBodyParams(),
-            $existing
+            $bodyParams,
+            $existing,
+            $fieldPayload
         );
 
         if ($template->creatorId === null) {
@@ -97,12 +106,7 @@ final class TemplatesController extends Controller
 
             return $this->renderTemplate('data-export-builder/_cp/exports/_edit', [
                 'template' => $template,
-                'fieldPayload' => Plugin::$plugin->get('fieldDiscovery')->getDiscoveryPayload(
-                    $template->elementType,
-                    (string)($template->filters['sectionUid'] ?? ''),
-                    false,
-                    isset($template->filters['formId']) ? (int)$template->filters['formId'] : null
-                ),
+                'fieldPayload' => $fieldPayload,
                 'isProEdition' => CapabilityHelper::isProEdition(),
                 'elementTypeOptions' => Plugin::$plugin->get('fieldDiscovery')->getElementTypeOptions(),
                 'runs' => $template->id ? Plugin::$plugin->get('templates')->getRunsForTemplate((int)$template->id) : [],
