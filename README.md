@@ -165,17 +165,6 @@ Data Export Builder declares native Craft plugin editions:
 
 Set the edition through Craft plugin editions, not environment variables. Craft stores the active edition in project config; change it via `plugins.data-export-builder.edition` when testing edition-gated behavior locally. See [docs/pricing-edition-notes.md](docs/pricing-edition-notes.md) for edition rationale and pricing direction after launch validation.
 
-## Known Limitations
-
-- Keyword filters use Craft search to match rows, but exports keep a stable export order rather than search-relevance ranking.
-- Matrix flattening is practical, not exhaustive.
-
-## Roadmap
-
-- field transformations
-- CLI triggers
-- richer Commerce mappings
-
 ## Support
 
 - **Bug reports:** [GitHub Issues](https://github.com/LuremoDigital/Data-export-builder/issues) (please include reproduction steps).
