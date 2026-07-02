@@ -32,4 +32,17 @@ final class ExportServiceTest extends TestCase
             \Luremo\DataExportBuilder\helpers\ExportFileHelper::fileMimeType('xlsx')
         );
     }
+
+    public function testXmlMimeTypeIsSupported(): void
+    {
+        self::assertSame('application/xml', \Luremo\DataExportBuilder\helpers\ExportFileHelper::fileMimeType('xml'));
+    }
+
+    public function testUnknownFormatMimeTypeFailsClosed(): void
+    {
+        // No CSV fallback: an unknown format must throw instead of quietly
+        // serving text/csv for a file that is not CSV.
+        $this->expectException(\InvalidArgumentException::class);
+        \Luremo\DataExportBuilder\helpers\ExportFileHelper::fileMimeType('yaml');
+    }
 }
