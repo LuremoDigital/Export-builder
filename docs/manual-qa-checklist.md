@@ -77,7 +77,7 @@
 - Export values containing `&`, `<`, `>`, quotes, multiline text, and emoji; confirm the file stays parseable and values round-trip.
 - Switch a template XML -> CSV -> XML and confirm the configured root/row names are preserved.
 - Run an empty XML export (filters matching zero rows) and confirm a valid root-only document downloads.
-- Confirm the download uses the `.xml` extension and `application/xml` MIME type (also for email/webhook/volume delivery).
+- Confirm the download uses the `.xml` extension and the `application/xml` MIME type, and that email/webhook/volume delivery carries the `.xml` file name.
 - Confirm Standard edition cannot select or run XML, and the format instructions mention XML as Pro.
 - Force a failure mid-run (for example an unwritable export directory) and confirm the run is marked failed with no partial XML file exposed in run history.
 

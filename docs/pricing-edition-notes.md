@@ -31,7 +31,7 @@
 ## Pro Edition
 
 - Commerce order, product, and variant exports
-- XLSX exports
+- XLSX and XML exports
 - scheduled exports
 - remote delivery hooks
 - custom queue thresholds and advanced run handling
