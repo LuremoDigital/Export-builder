@@ -7,7 +7,7 @@
     </linearGradient>
   </defs>
 
-  <rect width="794" height="794" fill="url(#bg-gradient)"/>
+  <rect width="794" height="794" rx="96" ry="96" fill="url(#bg-gradient)"/>
 
   <g fill="#FFFFFF">
     <path d="M188 70H461L657 266V670C657 688 647 704 631 714C623 721 613 726 603 726H395V662H593V299L428 298L427 134H196V463H132V128C132 108 143 92 160 81C168 75 178 70 188 70Z"/>
