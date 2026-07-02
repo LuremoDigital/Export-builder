@@ -40,6 +40,17 @@ Built for agencies, freelancers, and in-house Craft teams that repeatedly need c
 † Pro edition; available when the [Formie](https://plugins.craftcms.com/formie) or [Wheelform](https://plugins.craftcms.com/wheelform) plugin is installed and enabled.
 ‡ Requires [Craft Commerce](https://plugins.craftcms.com/commerce) and the Pro edition.
 
+## Supported Output Formats
+
+| Format | Standard | Pro |
+| ------ | :------: | :-: |
+| CSV    |    ✓     |  ✓  |
+| JSON   |    ✓     |  ✓  |
+| XLSX   |    —     |  ✓  |
+| XML    |    —     |  ✓  |
+
+XML exports (Pro) produce a generic row-based document: a configurable root element, one configurable row element per exported item, and one child element per selected field. Field tag names are generated from export column titles ("Order Number" becomes `<order_number>`; duplicate generated names get `_2`, `_3` suffixes). Values are flattened to readable text the same way CSV flattens them.
+
 ## Requirements
 
 - PHP 8.2+ (with the `xmlwriter` extension, enabled by default)
@@ -83,17 +94,6 @@ Then grant the plugin permissions to the right user groups.
 - ⏱️ **Scale safely** — small exports run immediately; larger ones queue and download later from run history.
 - 🤖 **Automate (Pro)** — schedule recurring exports and deliver them by email, webhook, or to a Craft asset volume.
 
-## Supported Output Formats
-
-| Format | Standard | Pro |
-| ------ | :------: | :-: |
-| CSV    |    ✓     |  ✓  |
-| JSON   |    ✓     |  ✓  |
-| XLSX   |    —     |  ✓  |
-| XML    |    —     |  ✓  |
-
-XML exports (Pro) produce a generic row-based document: a configurable root element, one configurable row element per exported item, and one child element per selected field. Field tag names are generated from export column titles ("Order Number" becomes `<order_number>`; duplicate generated names get `_2`, `_3` suffixes). Values are flattened to readable text the same way CSV flattens them.
-
 ## Field Support
 
 The field picker includes:
@@ -105,20 +105,6 @@ The field picker includes:
 - practical Matrix sub-field paths
 
 Dates are normalized to `Y-m-d H:i:s`. CSV output uses native `fputcsv()` escaping for commas, quotes, and multiline values. Relation values export as comma-separated readable values in CSV, and as arrays where practical in JSON.
-
-## Screenshots
-
-<p align="center"><img src="docs/img/templates-index.png" alt="Templates index" width="800"></p>
-<p align="center"><em>The Exports index — every saved template, ready to run.</em></p>
-
-<p align="center"><img src="docs/img/template-builder.png" alt="Template builder with field picker" width="800"></p>
-<p align="center"><em>Build a template: choose an element type, pick fields, rename and reorder columns.</em></p>
-
-<p align="center"><img src="docs/img/run-history.png" alt="Run history" width="800"></p>
-<p align="center"><em>Run history with queued, completed, and failed runs.</em></p>
-
-<p align="center"><img src="docs/img/commerce-export.png" alt="Commerce order export" width="800"></p>
-<p align="center"><em>A Commerce order export template (Pro).</em></p>
 
 ## Queue Behavior
 
@@ -168,17 +154,6 @@ Data Export Builder declares native Craft plugin editions:
 
 Set the edition through Craft plugin editions, not environment variables. Craft stores the active edition in project config; change it via `plugins.data-export-builder.edition` when testing edition-gated behavior locally. See [docs/pricing-edition-notes.md](docs/pricing-edition-notes.md) for edition rationale and pricing direction after launch validation.
 
-## Known Limitations
-
-- Keyword filters use Craft search to match rows, but exports keep a stable export order rather than search-relevance ranking.
-- Matrix flattening is practical, not exhaustive.
-
-## Roadmap
-
-- field transformations
-- CLI triggers
-- richer Commerce mappings
-
 ## Support
 
 - **Bug reports:** [GitHub Issues](https://github.com/LuremoDigital/Data-export-builder/issues) (please include reproduction steps).
@@ -190,5 +165,19 @@ Set the edition through Craft plugin editions, not environment variables. Craft 
 Commercial. See [LICENSE.md](LICENSE.md). Licenses are sold through the [Craft Plugin Store](https://plugins.craftcms.com/data-export-builder).
 
 ---
+
+## Screenshots
+
+<p align="center"><img src="docs/img/templates-index.png" alt="Templates index" width="800"></p>
+<p align="center"><em>The Exports index — every saved template, ready to run.</em></p>
+
+<p align="center"><img src="docs/img/template-builder.png" alt="Template builder with field picker" width="800"></p>
+<p align="center"><em>Build a template: choose an element type, pick fields, rename and reorder columns.</em></p>
+
+<p align="center"><img src="docs/img/run-history.png" alt="Run history" width="800"></p>
+<p align="center"><em>Run history with queued, completed, and failed runs.</em></p>
+
+<p align="center"><img src="docs/img/commerce-export.png" alt="Commerce order export" width="800"></p>
+<p align="center"><em>A Commerce order export template (Pro).</em></p>
 
 <p align="center">Built by <a href="https://github.com/LuremoDigital">Luremo</a> for the Craft CMS community.</p>
