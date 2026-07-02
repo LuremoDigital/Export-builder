@@ -2,7 +2,7 @@
 
 ## Short Description
 
-Reusable CSV, JSON, and XLSX exports for Craft CMS teams that need reporting, migrations, and operational handoffs without custom scripts.
+Reusable CSV, JSON, XLSX, and XML exports for Craft CMS teams that need reporting, migrations, and operational handoffs without custom scripts.
 
 ## Long Description
 
@@ -18,7 +18,7 @@ Instead of rebuilding one-off export templates for every reporting request, migr
 - rename columns and control output order
 - apply section, site, form, and created-date filters where supported
 - export to CSV or JSON in Standard
-- export to XLSX in Pro
+- export to XLSX or generic row-based XML (with configurable root/row element names) in Pro
 - run smaller exports immediately and queue larger exports safely
 - download completed files later from run history
 - schedule recurring exports in Pro

@@ -5,7 +5,7 @@
 <h1 align="center">Data Export Builder</h1>
 
 <p align="center">
-  Reusable CSV, JSON, and XLSX exports for Craft CMS — define an export once, run it on demand.
+  Reusable CSV, JSON, XLSX, and XML exports for Craft CMS — define an export once, run it on demand.
 </p>
 
 <p align="center">
@@ -42,7 +42,7 @@ Built for agencies, freelancers, and in-house Craft teams that repeatedly need c
 
 ## Requirements
 
-- PHP 8.2+
+- PHP 8.2+ (with the `xmlwriter` extension, enabled by default)
 - Craft CMS 5.0+
 - Craft queue configured (for larger exports)
 - Craft Commerce (optional, for order/product/variant exports)
@@ -76,7 +76,7 @@ Then grant the plugin permissions to the right user groups.
 - 📤 **Export the elements you actually use** — entries, users, categories, tags, and assets, plus Commerce orders, products, and variants in Pro.
 - 📝 **Export form submissions (Pro)** — [Formie](https://plugins.craftcms.com/formie) and [Wheelform](https://plugins.craftcms.com/wheelform) submissions, filtered by form.
 - 🧩 **Pick fields without code** — native attributes, custom fields, relation fields, and practical Matrix sub-field paths, all from one field picker.
-- 🔃 **Shape the output** — rename and reorder columns, and choose CSV, JSON, or XLSX.
+- 🔃 **Shape the output** — rename and reorder columns, and choose CSV, JSON, XLSX, or XML.
 - 🔍 **Filter precisely** — by section, site, form, status, keyword, created date, relations, and selected field values where supported.
 - ⚡ **Start from presets** — one-click Commerce starting points (Order Ops, Catalog Feed, Inventory Feed) prefill sensible columns.
 - ♻️ **Reuse everything** — save export templates and run them again on demand.
@@ -90,6 +90,9 @@ Then grant the plugin permissions to the right user groups.
 | CSV    |    ✓     |  ✓  |
 | JSON   |    ✓     |  ✓  |
 | XLSX   |    —     |  ✓  |
+| XML    |    —     |  ✓  |
+
+XML exports (Pro) produce a generic row-based document: a configurable root element, one configurable row element per exported item, and one child element per selected field. Field tag names are generated from export column titles ("Order Number" becomes `<order_number>`; duplicate generated names get `_2`, `_3` suffixes). Values are flattened to readable text the same way CSV flattens them.
 
 ## Field Support
 
@@ -156,7 +159,7 @@ Exports can contain personal data (user records, Commerce order and customer det
 Data Export Builder declares native Craft plugin editions:
 
 - **Standard** — general content exports (CSV, JSON).
-- **Pro** — Commerce-focused workflows, XLSX, scheduling, and delivery.
+- **Pro** — Commerce-focused workflows, XLSX, XML, scheduling, and delivery.
 
 | Edition  | Price |
 | -------- | ----- |
