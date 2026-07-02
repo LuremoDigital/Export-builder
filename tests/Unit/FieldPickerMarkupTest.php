@@ -104,5 +104,6 @@ final class FieldPickerMarkupTest extends TestCase
         self::assertStringContainsString('>Date To</label>', $edit);
         self::assertStringNotContainsString('>Created From</label>', $edit);
         self::assertStringNotContainsString('>Created To</label>', $edit);
+        self::assertStringContainsString('Uses the order date for Commerce orders', $edit);
     }
 }
