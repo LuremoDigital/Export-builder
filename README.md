@@ -166,6 +166,7 @@ Commercial. See [LICENSE.md](LICENSE.md). Licenses are sold through the [Craft P
 
 ---
 
+
 ## Screenshots
 
 <p align="center"><img src="docs/img/templates-index.png" alt="Templates index" width="800"></p>
