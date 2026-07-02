@@ -51,6 +51,18 @@ Built for agencies, freelancers, and in-house Craft teams that repeatedly need c
 
 XML exports (Pro) produce a generic row-based document: a configurable root element, one configurable row element per exported item, and one child element per selected field. Field tag names are generated from export column titles ("Order Number" becomes `<order_number>`; duplicate generated names get `_2`, `_3` suffixes). Values are flattened to readable text the same way CSV flattens them.
 
+## Features
+
+- 📤 **Export the elements you actually use** — entries, users, categories, tags, and assets, plus Commerce orders, products, and variants in Pro.
+- 📝 **Export form submissions (Pro)** — [Formie](https://plugins.craftcms.com/formie) and [Wheelform](https://plugins.craftcms.com/wheelform) submissions, filtered by form.
+- 🧩 **Pick fields without code** — native attributes, custom fields, relation fields, and practical Matrix sub-field paths, all from one field picker.
+- 🔃 **Shape the output** — rename and reorder columns, and choose CSV, JSON, XLSX, or XML.
+- 🔍 **Filter precisely** — by section, site, form, status, keyword, created date, relations, and selected field values where supported.
+- ⚡ **Start from presets** — one-click Commerce starting points (Order Ops, Catalog Feed, Inventory Feed) prefill sensible columns.
+- ♻️ **Reuse everything** — save export templates and run them again on demand.
+- ⏱️ **Scale safely** — small exports run immediately; larger ones queue and download later from run history.
+- 🤖 **Automate (Pro)** — schedule recurring exports and deliver them by email, webhook, or to a Craft asset volume.
+
 ## Requirements
 
 - PHP 8.2+ (with the `xmlwriter` extension, enabled by default)
@@ -81,18 +93,6 @@ Then grant the plugin permissions to the right user groups.
 7. Save the template.
 8. Run the export.
 9. Download the completed file from run history.
-
-## Features
-
-- 📤 **Export the elements you actually use** — entries, users, categories, tags, and assets, plus Commerce orders, products, and variants in Pro.
-- 📝 **Export form submissions (Pro)** — [Formie](https://plugins.craftcms.com/formie) and [Wheelform](https://plugins.craftcms.com/wheelform) submissions, filtered by form.
-- 🧩 **Pick fields without code** — native attributes, custom fields, relation fields, and practical Matrix sub-field paths, all from one field picker.
-- 🔃 **Shape the output** — rename and reorder columns, and choose CSV, JSON, XLSX, or XML.
-- 🔍 **Filter precisely** — by section, site, form, status, keyword, created date, relations, and selected field values where supported.
-- ⚡ **Start from presets** — one-click Commerce starting points (Order Ops, Catalog Feed, Inventory Feed) prefill sensible columns.
-- ♻️ **Reuse everything** — save export templates and run them again on demand.
-- ⏱️ **Scale safely** — small exports run immediately; larger ones queue and download later from run history.
-- 🤖 **Automate (Pro)** — schedule recurring exports and deliver them by email, webhook, or to a Craft asset volume.
 
 ## Field Support
 
