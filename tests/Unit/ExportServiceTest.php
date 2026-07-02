@@ -38,6 +38,24 @@ final class ExportServiceTest extends TestCase
         self::assertSame('application/xml', \Luremo\DataExportBuilder\helpers\ExportFileHelper::fileMimeType('xml'));
     }
 
+    public function testXmlTemplateFileNameGetsXmlExtension(): void
+    {
+        // buildFileName resolves the extension through the format registry;
+        // this pins the registry wiring so an XML run never downloads as
+        // "*.xml-format-name" or falls back to the raw format handle.
+        $template = new ExportTemplate([
+            'name' => 'Orders Feed',
+            'handle' => 'ordersFeed',
+            'elementType' => 'entries',
+            'format' => 'xml',
+        ]);
+        $run = new \Luremo\DataExportBuilder\models\ExportRun(['id' => 7, 'format' => 'xml', 'templateId' => 1]);
+
+        $fileName = \Luremo\DataExportBuilder\helpers\ExportFileHelper::buildFileName($template, $run);
+
+        self::assertMatchesRegularExpression('/^ordersfeed-\d{8}-\d{6}-7\.xml$/', $fileName);
+    }
+
     public function testUnknownFormatMimeTypeFailsClosed(): void
     {
         // No CSV fallback: an unknown format must throw instead of quietly

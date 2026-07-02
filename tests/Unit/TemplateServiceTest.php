@@ -205,6 +205,68 @@ final class TemplateServiceTest extends TestCase
         self::assertSame('order', $template->settings['xml']['rowElement']);
     }
 
+    public function testPresentButEmptyXmlValuesAreKeptEmptyNotRestored(): void
+    {
+        $service = new TemplateService();
+
+        $existing = new ExportTemplate([
+            'name' => 'Orders',
+            'handle' => 'orders',
+            'format' => 'xml',
+            'settings' => [
+                'xml' => ['rootElement' => 'orders', 'rowElement' => 'order'],
+            ],
+        ]);
+
+        // The user cleared both fields in the CP. Keeping them empty (instead
+        // of silently restoring the old names) lets validateXmlSettings reject
+        // the save explicitly — the user asked for a change, not a revert.
+        $template = $service->createTemplateFromRequest([
+            'name' => 'Orders',
+            'format' => 'xml',
+            'settings' => [
+                'xml' => ['rootElement' => '', 'rowElement' => '   '],
+            ],
+            'fields' => [
+                ['fieldPath' => 'title'],
+            ],
+        ], $existing);
+
+        self::assertSame('', $template->settings['xml']['rootElement']);
+        self::assertSame('', $template->settings['xml']['rowElement']);
+        self::assertFalse($service->validateXmlSettings($template));
+    }
+
+    public function testPartialXmlPayloadMergesPerKeyWithExistingValues(): void
+    {
+        $service = new TemplateService();
+
+        $existing = new ExportTemplate([
+            'name' => 'Orders',
+            'handle' => 'orders',
+            'format' => 'xml',
+            'settings' => [
+                'xml' => ['rootElement' => 'orders', 'rowElement' => 'order'],
+            ],
+        ]);
+
+        // Fallback is per key, not all-or-nothing: a payload that only sends
+        // rootElement must not reset rowElement to the "row" default.
+        $template = $service->createTemplateFromRequest([
+            'name' => 'Orders',
+            'format' => 'xml',
+            'settings' => [
+                'xml' => ['rootElement' => 'catalog'],
+            ],
+            'fields' => [
+                ['fieldPath' => 'title'],
+            ],
+        ], $existing);
+
+        self::assertSame('catalog', $template->settings['xml']['rootElement']);
+        self::assertSame('order', $template->settings['xml']['rowElement']);
+    }
+
     public function testValidateXmlSettingsRejectsInvalidNamesOnlyForXmlTemplates(): void
     {
         $service = new TemplateService();

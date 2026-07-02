@@ -179,6 +179,43 @@ final class XmlExportWriterTest extends TestCase
         self::assertFileExists($path);
     }
 
+    public function testWriteRowBeforeOpenThrows(): void
+    {
+        // Lifecycle guard: writing without open() must fail loudly instead of
+        // silently dropping rows — a caller bug should never yield an export
+        // that looks successful but is missing data.
+        $writer = new XmlExportWriter($this->tempFile(), 'export', 'row');
+
+        $this->expectException(\yii\base\Exception::class);
+        $this->expectExceptionMessage('XML writer is not open.');
+        $writer->writeRow(['id' => '1']);
+    }
+
+    public function testCloseBeforeOpenThrows(): void
+    {
+        // Same guard on close(): closing an unopened writer is a caller bug,
+        // not a no-op, so it must not report success.
+        $writer = new XmlExportWriter($this->tempFile(), 'export', 'row');
+
+        $this->expectException(\yii\base\Exception::class);
+        $this->expectExceptionMessage('XML writer is not open.');
+        $writer->close();
+    }
+
+    public function testAbortBeforeOpenIsSafeAndRemovesPreexistingFile(): void
+    {
+        // abort() is called from a catch-all in streamXmlExport, so it must
+        // be safe to invoke at any lifecycle stage — including before open()
+        // ever succeeded (e.g. openUri failed after tempnam created the file).
+        $path = $this->tempFile();
+        file_put_contents($path, 'stale partial content');
+
+        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer->abort();
+
+        self::assertFileDoesNotExist($path);
+    }
+
     private function tempFile(): string
     {
         $path = tempnam(sys_get_temp_dir(), 'deb-xml-test-');

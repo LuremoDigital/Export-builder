@@ -89,4 +89,14 @@ final class ExportFormatHelperTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         ExportFormatHelper::label('yaml');
     }
+
+    public function testKnownFormatsAreSupportedWithStableLabels(): void
+    {
+        // Labels surface in CP format options and in the Pro-gating error
+        // message TemplateService builds, so they are contract, not cosmetics.
+        foreach (['csv' => 'CSV', 'json' => 'JSON', 'xlsx' => 'XLSX', 'xml' => 'XML'] as $handle => $label) {
+            self::assertTrue(ExportFormatHelper::isSupported($handle));
+            self::assertSame($label, ExportFormatHelper::label($handle));
+        }
+    }
 }
