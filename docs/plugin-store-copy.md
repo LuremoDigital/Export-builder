@@ -17,7 +17,7 @@ Instead of rebuilding one-off export templates for every reporting request, migr
 - start an accounting handoff from a country-neutral Commerce order preset with revenue, recorded tax totals, discounts, shipping, currency, and line items
 - discover native fields, custom fields, relation paths, and practical Matrix paths
 - rename columns and control output order
-- apply section, site, form, and created-date filters where supported
+- apply section, site, form, and relevant element-date filters where supported
 - export to CSV or JSON in Standard
 - export to XLSX or generic row-based XML (with configurable root/row element names) in Pro
 - run smaller exports immediately and queue larger exports safely

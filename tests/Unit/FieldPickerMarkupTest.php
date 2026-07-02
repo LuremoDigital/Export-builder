@@ -95,4 +95,14 @@ final class FieldPickerMarkupTest extends TestCase
             $js
         );
     }
+
+    public function testDateFilterLabelsDoNotClaimEveryElementUsesCreationDate(): void
+    {
+        $edit = self::read('src/templates/_cp/exports/_edit.twig');
+
+        self::assertStringContainsString('>Date From</label>', $edit);
+        self::assertStringContainsString('>Date To</label>', $edit);
+        self::assertStringNotContainsString('>Created From</label>', $edit);
+        self::assertStringNotContainsString('>Created To</label>', $edit);
+    }
 }
