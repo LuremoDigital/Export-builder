@@ -33,7 +33,18 @@ final class CapabilityHelperTest extends TestCase
         self::assertTrue(CapabilityHelper::supportsFormatForEdition(Plugin::EDITION_STANDARD, 'csv'));
         self::assertTrue(CapabilityHelper::supportsFormatForEdition(Plugin::EDITION_STANDARD, 'json'));
         self::assertFalse(CapabilityHelper::supportsFormatForEdition(Plugin::EDITION_STANDARD, 'xlsx'));
+        self::assertFalse(CapabilityHelper::supportsFormatForEdition(Plugin::EDITION_STANDARD, 'xml'));
         self::assertTrue(CapabilityHelper::supportsFormatForEdition(Plugin::EDITION_PRO, 'xlsx'));
+        self::assertTrue(CapabilityHelper::supportsFormatForEdition(Plugin::EDITION_PRO, 'xml'));
+    }
+
+    public function testUnknownFormatsAreRejectedForEveryEdition(): void
+    {
+        // Fail closed: an unrecognized format must never slip through edition
+        // gating (it previously risked falling back to CSV downstream).
+        self::assertFalse(CapabilityHelper::supportsFormatForEdition(Plugin::EDITION_STANDARD, 'yaml'));
+        self::assertFalse(CapabilityHelper::supportsFormatForEdition(Plugin::EDITION_PRO, 'yaml'));
+        self::assertFalse(CapabilityHelper::supportsFormatForEdition(Plugin::EDITION_PRO, ''));
     }
 
     public function testFormieElementTypeHandleIsStable(): void

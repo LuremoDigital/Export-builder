@@ -6,6 +6,7 @@ namespace Luremo\DataExportBuilder\models;
 
 use craft\base\Model;
 use DateTimeInterface;
+use Luremo\DataExportBuilder\helpers\ExportFormatHelper;
 
 final class ExportRun extends Model
 {
@@ -42,7 +43,7 @@ final class ExportRun extends Model
                 self::STATUS_COMPLETED,
                 self::STATUS_FAILED,
             ]],
-            [['format'], 'in', 'range' => ['csv', 'json', 'xlsx']],
+            [['format'], 'in', 'range' => ExportFormatHelper::allowedFormatHandles()],
             [['fileName'], 'string', 'max' => 255],
             [['fileMimeType'], 'string', 'max' => 100],
             [['filePath', 'errorMessage'], 'string'],

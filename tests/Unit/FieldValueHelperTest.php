@@ -99,4 +99,21 @@ final class FieldValueHelperTest extends TestCase
         self::assertTrue(FieldValueHelper::normalizeResolvedValue(true, 'json'));
         self::assertNull(FieldValueHelper::normalizeResolvedValue(null, 'json'));
     }
+
+    public function testFlatTextModeFlattensLikeCsv(): void
+    {
+        // XML resolves values through the named flatText contract; it must
+        // keep producing the same human-readable flattening CSV users see,
+        // independent of the accidental "any non-JSON format" fallback.
+        $mode = FieldValueHelper::MODE_FLAT_TEXT;
+
+        self::assertSame('flatText', $mode);
+        self::assertSame('true', FieldValueHelper::normalizeResolvedValue(true, $mode));
+        self::assertSame('', FieldValueHelper::normalizeResolvedValue(null, $mode));
+        self::assertSame('One, Two', FieldValueHelper::normalizeResolvedValue([
+            ['title' => 'One'],
+            ['title' => 'Two'],
+        ], $mode));
+        self::assertSame(42, FieldValueHelper::normalizeResolvedValue(42, $mode));
+    }
 }

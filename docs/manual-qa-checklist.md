@@ -66,6 +66,21 @@
 - Verify column headers, ordering, value formatting, and date normalization match the CSV output.
 - Confirm Standard edition cannot select or run XLSX.
 
+## XML Output (Pro)
+
+- Select XML as the output format and confirm the `XML Settings` subsection appears directly under Output Format, and disappears when switching to another format.
+- Confirm the selected-fields panel shows the XML tag-name hint only while XML is selected.
+- Save with the default root/row names (`export`/`row`), run the export, and confirm the file parses as well-formed XML with the expected structure (root -> row -> field elements).
+- Save with custom root/row names and confirm the generated file uses them.
+- Enter invalid names (`123root`, `xmlData`, a name with spaces, an empty name) and confirm each shows a clear field-level error, keeps the typed value, and blocks the save. Confirm the same feedback appears inline while typing.
+- Confirm column titles map to generated tag names ("Order Number" -> `<order_number>`) and duplicate titles get `_2`/`_3` suffixes.
+- Export values containing `&`, `<`, `>`, quotes, multiline text, and emoji; confirm the file stays parseable and values round-trip.
+- Switch a template XML -> CSV -> XML and confirm the configured root/row names are preserved.
+- Run an empty XML export (filters matching zero rows) and confirm a valid root-only document downloads.
+- Confirm the download uses the `.xml` extension and the `application/xml` MIME type, and that email/webhook/volume delivery carries the `.xml` file name.
+- Confirm Standard edition cannot select or run XML, and the format instructions mention XML as Pro.
+- Force a failure mid-run (for example an unwritable export directory) and confirm the run is marked failed with no partial XML file exposed in run history.
+
 ## Scheduling (Pro)
 
 - Configure a scheduled export on a template.

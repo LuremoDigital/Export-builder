@@ -87,11 +87,7 @@ final class CapabilityHelper
 
     public static function supportsFormatForEdition(string $edition, string $format): bool
     {
-        return match ($format) {
-            'csv', 'json' => true,
-            'xlsx' => self::editionHasFeature($edition, self::FEATURE_XLSX),
-            default => false,
-        };
+        return ExportFormatHelper::isAvailableForEdition($format, $edition);
     }
 
     public static function supportsElementTypeHandle(string $handle): bool

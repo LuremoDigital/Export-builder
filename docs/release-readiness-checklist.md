@@ -19,7 +19,7 @@ This is the Phase 1 commercial-readiness checklist for Data Export Builder. The 
 
 ## Product Packaging
 
-- ensure all public descriptions mention CSV, JSON, and XLSX consistently
+- ensure all public descriptions mention CSV, JSON, XLSX, and XML consistently
 - ensure Plugin Store copy matches actual Standard vs Pro behavior
 - document scheduling, webhook delivery, and volume delivery as Pro workflows
 - confirm edition-gated features are enforced by real licensing, not only local assumptions

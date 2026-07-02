@@ -456,6 +456,7 @@
     .deb-form-grid,
     .deb-filter-row,
     .deb-field-picker,
+    .deb-xml-settings__fields,
     .deb-page {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -570,6 +571,30 @@
 .deb-btn--danger:hover {
     background: #ad3030;
     border-color: #ad3030;
+}
+
+.deb-xml-settings {
+    grid-column: 1 / -1;
+    display: grid;
+    gap: 12px;
+    padding: 14px;
+    border: 1px solid rgba(96, 125, 159, 0.25);
+    border-radius: 8px;
+}
+
+.deb-xml-settings__fields {
+    display: grid;
+    gap: 18px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.deb-xml-settings .deb-xml-name-error {
+    color: var(--error-color, #cf1124);
+    margin: 4px 0 0;
+}
+
+.deb-xml-field-hint {
+    margin: 0 0 8px;
 }
 
 .fullwidth {

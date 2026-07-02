@@ -1,6 +1,6 @@
 {
     "name": "luremo/craft-data-export-builder",
-    "description": "Reusable CSV, JSON, and XLSX exports for Craft CMS teams that need reporting, migrations, and operational handoffs without custom scripts.",
+    "description": "Reusable CSV, JSON, XLSX, and XML exports for Craft CMS teams that need reporting, migrations, and operational handoffs without custom scripts.",
     "type": "craft-plugin",
     "license": "proprietary",
     "keywords": [
@@ -12,6 +12,7 @@
         "csv",
         "json",
         "xlsx",
+        "xml",
         "commerce"
     ],
     "homepage": "https://github.com/LuremoDigital/Data-export-builder",
@@ -23,6 +24,7 @@
         "php": "^8.2",
         "craftcms/cms": "^5.0",
         "ext-json": "*",
+        "ext-xmlwriter": "*",
         "openspout/openspout": "^4.0"
     },
     "require-dev": {
@@ -45,7 +47,7 @@
         "name": "Data Export Builder",
         "handle": "data-export-builder",
         "class": "Luremo\\DataExportBuilder\\Plugin",
-        "description": "Build reusable CSV, JSON, and XLSX exports for Craft CMS without custom templates or one-off scripts.",
+        "description": "Build reusable CSV, JSON, XLSX, and XML exports for Craft CMS without custom templates or one-off scripts.",
         "developer": "Luremo",
         "developerUrl": "https://github.com/LuremoDigital",
         "documentationUrl": "https://github.com/LuremoDigital/Data-export-builder#readme",

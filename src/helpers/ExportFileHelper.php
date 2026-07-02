@@ -31,7 +31,7 @@ final class ExportFileHelper
         $timestamp = gmdate('Ymd-His');
         $base = self::sanitizeFileName($template->handle ?: $template->name);
 
-        return sprintf('%s-%s-%d.%s', $base, $timestamp, $run->id ?? 0, $template->format);
+        return sprintf('%s-%s-%d.%s', $base, $timestamp, $run->id ?? 0, ExportFormatHelper::extension($template->format));
     }
 
     public static function buildFilePath(ExportTemplate $template, ExportRun $run): string
@@ -41,11 +41,7 @@ final class ExportFileHelper
 
     public static function fileMimeType(string $format): string
     {
-        return match ($format) {
-            'json' => 'application/json',
-            'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            default => 'text/csv',
-        };
+        return ExportFormatHelper::mimeType($format);
     }
 
     public static function isInsideExportPath(string $path): bool
