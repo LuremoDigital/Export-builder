@@ -66,6 +66,7 @@ final class Plugin extends BasePlugin
         $item = parent::getCpNavItem();
         $item['label'] = Craft::t(self::TRANSLATION_CATEGORY, 'Exports');
         $item['url'] = 'data-export-builder/exports';
+        $item['icon'] = dirname(__DIR__) . DIRECTORY_SEPARATOR . 'icon-mask.svg';
 
         if ($this->isInstalled) {
             $item['badgeCount'] = $this->get('templates')->getFailedRunCount();
