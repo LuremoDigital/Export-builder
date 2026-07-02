@@ -15,12 +15,35 @@ namespace Luremo\DataExportBuilder\helpers;
  */
 final class XmlExportHelper
 {
+    public const DEFAULT_ROOT_ELEMENT = 'export';
+    public const DEFAULT_ROW_ELEMENT = 'row';
+
     private const NAME_PATTERN = '/^[A-Za-z_][A-Za-z0-9_\-.]*$/';
+
+    /**
+     * Resolves the configured root/row element names from a template
+     * settings array, applying defaults for missing or blank values —
+     * templates saved before XML support have no `xml` namespace at all.
+     *
+     * @param array<string, mixed> $settings
+     * @return array{0:string,1:string} [rootElement, rowElement]
+     */
+    public static function resolveRootAndRowNames(array $settings): array
+    {
+        $xml = is_array($settings['xml'] ?? null) ? $settings['xml'] : [];
+
+        return [
+            trim((string)($xml['rootElement'] ?? '')) ?: self::DEFAULT_ROOT_ELEMENT,
+            trim((string)($xml['rowElement'] ?? '')) ?: self::DEFAULT_ROW_ELEMENT,
+        ];
+    }
 
     /**
      * Validates a user-supplied root or row element name.
      *
      * Returns a user-facing error message, or null when the name is valid.
+     * The rules and error copy are mirrored client-side in
+     * `web/assets/cp/dist/cp.js` (validateXmlElementName) — keep both in sync.
      */
     public static function validateElementName(string $name): ?string
     {
@@ -120,6 +143,10 @@ final class XmlExportHelper
             // then strip again so the writer never receives bytes that would
             // abort the stream mid-file.
             $reEncoded = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+            if (!is_string($reEncoded)) {
+                return '';
+            }
+
             $cleaned = preg_replace(
                 '/[^\x{9}\x{A}\x{D}\x{20}-\x{D7FF}\x{E000}-\x{FFFD}\x{10000}-\x{10FFFF}]/u',
                 '',

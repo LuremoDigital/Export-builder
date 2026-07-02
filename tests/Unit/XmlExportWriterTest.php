@@ -216,6 +216,74 @@ final class XmlExportWriterTest extends TestCase
         self::assertFileDoesNotExist($path);
     }
 
+    public function testOpenFailsLoudlyWhenDirectoryDoesNotExist(): void
+    {
+        // The openUri failure branch decides whether a bad export path is a
+        // loud failed run or a silent bad state — it must throw.
+        $path = sys_get_temp_dir() . '/deb-missing-' . uniqid('', true) . '/out.xml';
+        $writer = new XmlExportWriter($path, 'export', 'row');
+
+        $this->expectException(\yii\base\Exception::class);
+        $this->expectExceptionMessage('Could not open export file');
+        @$writer->open();
+    }
+
+    public function testOpenHandlesPathsWithUriSpecialCharacters(): void
+    {
+        // openUri() resolves plain paths via PHP streams, so directories
+        // containing spaces, "%", or "#" must be written to literally, not
+        // URI-decoded. Pins the raw-path contract (encoding would break it).
+        $dir = sys_get_temp_dir() . '/deb 50% #test-' . uniqid('', true);
+        mkdir($dir);
+        $path = $dir . '/out.xml';
+        $this->tempFiles[] = $path;
+
+        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer->open();
+        $writer->writeRow(['id' => '1']);
+        $writer->close();
+
+        self::assertFileExists($path);
+        $this->parse($path);
+
+        unlink($path);
+        rmdir($dir);
+    }
+
+    public function testWriteRowRejectsInvalidCellElementNames(): void
+    {
+        // Defense in depth: cell names normally come pre-sanitized from
+        // XmlExportHelper, but the writer re-validates so a future caller
+        // can't silently emit a malformed document.
+        $path = $this->tempFile();
+        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer->open();
+
+        try {
+            $this->expectException(InvalidArgumentException::class);
+            $writer->writeRow(['bad name!' => 'value']);
+        } finally {
+            $writer->abort();
+        }
+    }
+
+    public function testPerBatchFlushKeepsDocumentValid(): void
+    {
+        $path = $this->tempFile();
+
+        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer->open();
+        $writer->writeRow(['id' => '1']);
+        $writer->flush();
+        $writer->writeRow(['id' => '2']);
+        $writer->flush();
+        $writer->close();
+
+        $document = $this->parse($path);
+
+        self::assertSame(2, $document->getElementsByTagName('row')->length);
+    }
+
     private function tempFile(): string
     {
         $path = tempnam(sys_get_temp_dir(), 'deb-xml-test-');

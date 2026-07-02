@@ -456,6 +456,7 @@
     .deb-form-grid,
     .deb-filter-row,
     .deb-field-picker,
+    .deb-xml-settings__fields,
     .deb-page {
         grid-template-columns: minmax(0, 1fr);
     }
@@ -578,7 +579,7 @@
     gap: 12px;
     padding: 14px;
     border: 1px solid rgba(96, 125, 159, 0.25);
-    border-radius: 6px;
+    border-radius: 8px;
 }
 
 .deb-xml-settings__fields {
@@ -588,7 +589,7 @@
 }
 
 .deb-xml-settings .deb-xml-name-error {
-    color: #cf1124;
+    color: var(--error-color, #cf1124);
     margin: 4px 0 0;
 }
 

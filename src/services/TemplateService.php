@@ -330,7 +330,10 @@ final class TemplateService extends Component
         $existingXml = is_array($existingSettings['xml'] ?? null) ? $existingSettings['xml'] : [];
 
         $normalized = [];
-        foreach (['rootElement' => 'export', 'rowElement' => 'row'] as $key => $default) {
+        foreach ([
+            'rootElement' => XmlExportHelper::DEFAULT_ROOT_ELEMENT,
+            'rowElement' => XmlExportHelper::DEFAULT_ROW_ELEMENT,
+        ] as $key => $default) {
             $normalized[$key] = array_key_exists($key, $xmlPayload)
                 ? trim((string)$xmlPayload[$key])
                 : trim((string)($existingXml[$key] ?? $default));

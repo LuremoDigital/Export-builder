@@ -379,9 +379,7 @@ final class ExportService extends Component
             array_values($fields)
         ));
 
-        $xmlSettings = is_array($template->settings['xml'] ?? null) ? $template->settings['xml'] : [];
-        $rootElement = trim((string)($xmlSettings['rootElement'] ?? '')) ?: 'export';
-        $rowElement = trim((string)($xmlSettings['rowElement'] ?? '')) ?: 'row';
+        [$rootElement, $rowElement] = XmlExportHelper::resolveRootAndRowNames($template->settings);
 
         // The writer validates the root/row names and deletes the partial
         // file on abort, so a failed run never leaves a malformed document
@@ -403,6 +401,11 @@ final class ExportService extends Component
                     $writer->writeRow($cells);
                     $processed++;
                 }
+
+                // Checked per-batch flush: an IO failure (disk full, vanished
+                // mount) fails the run here instead of surfacing after the
+                // export was already reported as progressing.
+                $writer->flush();
 
                 if ($progressCallback !== null) {
                     $progressCallback($processed, $total);

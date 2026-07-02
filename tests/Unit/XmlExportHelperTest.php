@@ -116,6 +116,22 @@ final class XmlExportHelperTest extends TestCase
         self::assertSame('ab', XmlExportHelper::cleanTextValue("a\x1Fb"));
     }
 
+    public function testResolveRootAndRowNamesAppliesDefaults(): void
+    {
+        // Legacy templates saved before XML support have no settings.xml at
+        // all; blank values also fall back so a run never gets an empty name.
+        self::assertSame(['export', 'row'], XmlExportHelper::resolveRootAndRowNames([]));
+        self::assertSame(['export', 'row'], XmlExportHelper::resolveRootAndRowNames(['xml' => []]));
+        self::assertSame(['export', 'row'], XmlExportHelper::resolveRootAndRowNames(['xml' => ['rootElement' => '  ', 'rowElement' => '']]));
+        self::assertSame(['orders', 'order'], XmlExportHelper::resolveRootAndRowNames(['xml' => ['rootElement' => ' orders ', 'rowElement' => 'order']]));
+    }
+
+    public function testDefaultElementNameConstantsAreValid(): void
+    {
+        self::assertNull(XmlExportHelper::validateElementName(XmlExportHelper::DEFAULT_ROOT_ELEMENT));
+        self::assertNull(XmlExportHelper::validateElementName(XmlExportHelper::DEFAULT_ROW_ELEMENT));
+    }
+
     public function testCleanTextValueSurvivesInvalidUtf8(): void
     {
         $result = XmlExportHelper::cleanTextValue("valid \xC3\x28 tail");

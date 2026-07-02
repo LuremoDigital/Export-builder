@@ -26,10 +26,9 @@
 {% set isProEdition = isProEdition ?? false %}
 {% set schedule = template.settings.schedule ?? {} %}
 {% set delivery = template.settings.delivery ?? {} %}
-{% set formatOptions = formatOptions ?? [
-    { label: 'CSV', value: 'csv' },
-    { label: 'JSON', value: 'json' }
-] %}
+{# Format options come from ExportFormatHelper via TemplatesController — no
+   duplicated format list in Twig. #}
+{% set formatOptions = formatOptions ?? [] %}
 {% set xmlSettings = template.settings.xml ?? {} %}
 {% set xmlRootElement = xmlSettings.rootElement ?? 'export' %}
 {% set xmlRowElement = xmlSettings.rowElement ?? 'row' %}
@@ -135,7 +134,7 @@
                                         }) }}
                                     </div>
 
-                                    <p class="light">Use letters, numbers, underscores, hyphens, or periods. Names cannot contain spaces, start with a number, or use xml/xmlns.</p>
+                                    <p class="light">Use letters, numbers, underscores, hyphens, or periods. Names cannot contain spaces, start with a number, or begin with the reserved xml/xmlns prefix.</p>
                                 </div>
                             {% endif %}
 

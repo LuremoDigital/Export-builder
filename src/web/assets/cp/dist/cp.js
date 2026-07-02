@@ -94,6 +94,8 @@
         update();
     }
 
+    // Mirrors XmlExportHelper::validateElementName() — the PHP helper is the
+    // source of truth; keep rules and error copy in sync in both files.
     function validateXmlElementName(value) {
         const name = String(value || '').trim();
 
@@ -149,7 +151,9 @@
             }
 
             const error = document.createElement('p');
+            error.id = input.id + '-xml-name-error';
             error.className = 'deb-xml-name-error hidden';
+            error.setAttribute('aria-live', 'polite');
             input.insertAdjacentElement('afterend', error);
 
             input.addEventListener('input', function () {
@@ -157,6 +161,12 @@
                 error.textContent = message || '';
                 error.classList.toggle('hidden', !message);
                 input.classList.toggle('error', !!message);
+                input.setAttribute('aria-invalid', message ? 'true' : 'false');
+                if (message) {
+                    input.setAttribute('aria-describedby', error.id);
+                } else {
+                    input.removeAttribute('aria-describedby');
+                }
             });
         });
     }
