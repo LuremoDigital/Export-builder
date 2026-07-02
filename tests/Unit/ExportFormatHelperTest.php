@@ -99,4 +99,19 @@ final class ExportFormatHelperTest extends TestCase
             self::assertSame($label, ExportFormatHelper::label($handle));
         }
     }
+
+    public function testFormatInstructionsAreBuiltFromTheRegistryNotHardcoded(): void
+    {
+        // Pins the exact CP copy while sourcing every format name from the
+        // registry, so adding a 5th format can't silently leave stale text
+        // behind (the bug a hardcoded instructions string would reintroduce).
+        self::assertSame(
+            'Choose CSV, JSON, XLSX, or XML.',
+            ExportFormatHelper::formatInstructionsForEdition(Plugin::EDITION_PRO)
+        );
+        self::assertSame(
+            'CSV and JSON are included in Standard. Upgrade to Pro for XLSX and XML.',
+            ExportFormatHelper::formatInstructionsForEdition(Plugin::EDITION_STANDARD)
+        );
+    }
 }

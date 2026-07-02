@@ -101,7 +101,7 @@
                                 name: 'format',
                                 options: formatOptions,
                                 value: template.format,
-                                instructions: isProEdition ? 'Choose CSV, JSON, XLSX, or XML.' : 'CSV and JSON are included in Standard. Upgrade to Pro for XLSX and XML.',
+                                instructions: formatInstructions ?? '',
                                 errors: template.getErrors('format')
                             }) }}
 
@@ -553,7 +553,7 @@
                 {% endif %}
 
                 <div class="deb-save-bar">
-                    <button type="submit" class="btn submit">Save Template</button>
+                    <button type="submit" class="btn submit deb-save-button">Save Template</button>
                 </div>
             </form>
         </div>

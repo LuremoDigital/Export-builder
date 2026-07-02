@@ -101,6 +101,49 @@ final class ExportFormatHelper
         return self::get($format)['label'];
     }
 
+    /**
+     * CP copy for the Output Format field, built from the registry so it
+     * cannot drift out of sync with the actual format list the way a
+     * hardcoded instructions string would.
+     */
+    public static function formatInstructionsForEdition(string $edition): string
+    {
+        $available = array_column(self::optionsForEdition($edition), 'label');
+        $locked = array_values(array_diff(
+            array_column(self::optionsForEdition(Plugin::EDITION_PRO), 'label'),
+            $available
+        ));
+
+        if ($locked === []) {
+            return sprintf('Choose %s.', self::joinLabels($available, 'or'));
+        }
+
+        return sprintf(
+            '%s %s included in Standard. Upgrade to Pro for %s.',
+            self::joinLabels($available, 'and'),
+            count($available) === 1 ? 'is' : 'are',
+            self::joinLabels($locked, 'and')
+        );
+    }
+
+    /**
+     * @param string[] $labels
+     */
+    private static function joinLabels(array $labels, string $conjunction): string
+    {
+        if (count($labels) < 2) {
+            return $labels[0] ?? '';
+        }
+
+        $last = array_pop($labels);
+
+        // Two items: "A and B" (no comma). Three or more: Oxford comma,
+        // "A, B, and C".
+        return count($labels) === 1
+            ? sprintf('%s %s %s', $labels[0], $conjunction, $last)
+            : sprintf('%s, %s %s', implode(', ', $labels), $conjunction, $last);
+    }
+
     public static function mimeType(string $format): string
     {
         return self::get($format)['mimeType'];
