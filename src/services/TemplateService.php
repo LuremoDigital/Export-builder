@@ -199,7 +199,13 @@ final class TemplateService extends Component
         $isValid = true;
 
         foreach (['rootElement', 'rowElement'] as $key) {
-            $error = XmlExportHelper::validateElementName((string)($xmlSettings[$key] ?? ''));
+            $value = $xmlSettings[$key] ?? '';
+            // Non-scalar input (e.g. a malformed array payload) must be
+            // rejected outright, not coerced to the literal string "Array"
+            // — a scalar-looking cast would let it silently pass validation.
+            $error = is_scalar($value)
+                ? XmlExportHelper::validateElementName((string)$value)
+                : 'Enter an XML element name.';
             if ($error !== null) {
                 $template->addError('settings.xml.' . $key, $error);
                 $isValid = false;
@@ -335,11 +341,23 @@ final class TemplateService extends Component
             'rowElement' => XmlExportHelper::DEFAULT_ROW_ELEMENT,
         ] as $key => $default) {
             $normalized[$key] = array_key_exists($key, $xmlPayload)
-                ? trim((string)$xmlPayload[$key])
+                ? trim($this->scalarStringOrEmpty($xmlPayload[$key]))
                 : trim((string)($existingXml[$key] ?? $default));
         }
 
         return $normalized;
+    }
+
+    /**
+     * Coerces a request value to a string only when it is already scalar.
+     * A non-scalar payload (e.g. `settings[xml][rootElement][]=x`) must
+     * normalize to an empty string — which validateXmlSettings() rejects —
+     * rather than PHP's `(string)` cast of an array, which silently produces
+     * the literal, validation-passing string "Array".
+     */
+    private function scalarStringOrEmpty(mixed $value): string
+    {
+        return is_scalar($value) ? (string)$value : '';
     }
 
     public function touchLastRun(int $templateId, string $timestamp): void

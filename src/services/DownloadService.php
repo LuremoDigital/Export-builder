@@ -24,21 +24,33 @@ final class DownloadService extends Component
             throw new NotFoundHttpException('Invalid export file path.');
         }
 
-        try {
-            $mimeType = $run->fileMimeType ?? ExportFileHelper::fileMimeType($run->format);
-        } catch (InvalidArgumentException) {
-            // Unknown format on a legacy/corrupt run row: fail closed as a
-            // 404 rather than serving the file with a guessed MIME type.
-            throw new NotFoundHttpException('The requested export file is no longer available.');
-        }
-
         return Craft::$app->getResponse()->sendFile(
             $run->filePath,
             $run->fileName,
             [
-                'mimeType' => $mimeType,
+                'mimeType' => $this->resolveMimeType($run),
                 'inline' => false,
             ]
         );
+    }
+
+    /**
+     * Resolves the download MIME type. Public for unit testability (this
+     * suite is deliberately Craft-runtime-free; sendFile() is not).
+     *
+     * Checks the format registry first — fail-closed for unknown formats —
+     * rather than short-circuiting on a stored `fileMimeType` via `??`. A
+     * corrupt/legacy row can have both a stale `format` AND a stored MIME
+     * type; the `??` form would skip the registry check entirely for that row.
+     */
+    public function resolveMimeType(ExportRun $run): string
+    {
+        try {
+            $registryMimeType = ExportFileHelper::fileMimeType($run->format);
+        } catch (InvalidArgumentException) {
+            throw new NotFoundHttpException('The requested export file is no longer available.');
+        }
+
+        return $run->fileMimeType ?? $registryMimeType;
     }
 }

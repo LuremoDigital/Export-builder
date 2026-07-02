@@ -331,4 +331,48 @@ final class TemplateServiceTest extends TestCase
         self::assertTrue($service->validateXmlSettings($template));
         self::assertSame([], $template->getErrors());
     }
+
+    public function testValidateXmlSettingsRejectsNonScalarValuesInsteadOfCoercingThem(): void
+    {
+        // A malformed payload like settings[xml][rootElement][]=x arrives as
+        // an array. PHP's (string) cast on an array produces the literal
+        // string "Array", which would pass name validation and get
+        // persisted as a real tag name. Non-scalar input must be rejected.
+        $service = new TemplateService();
+
+        $template = new ExportTemplate([
+            'format' => 'xml',
+            'settings' => [
+                'xml' => ['rootElement' => ['nested' => 'value'], 'rowElement' => 'row'],
+            ],
+        ]);
+
+        self::assertFalse($service->validateXmlSettings($template));
+        self::assertSame('Enter an XML element name.', $template->getFirstError('settings.xml.rootElement'));
+        self::assertNull($template->getFirstError('settings.xml.rowElement'));
+    }
+
+    public function testCreateTemplateFromRequestRejectsNonScalarXmlSettingsInsteadOfCoercingToArrayString(): void
+    {
+        $service = new TemplateService();
+
+        $template = $service->createTemplateFromRequest([
+            'name' => 'XML Export',
+            'format' => 'xml',
+            'settings' => [
+                'xml' => [
+                    'rootElement' => ['0' => 'x'],
+                    'rowElement' => 'order',
+                ],
+            ],
+            'fields' => [
+                ['fieldPath' => 'title'],
+            ],
+        ]);
+
+        // Must normalize to an empty string (rejected by validation), never
+        // to the literal "Array".
+        self::assertSame('', $template->settings['xml']['rootElement']);
+        self::assertFalse($service->validateXmlSettings($template));
+    }
 }
