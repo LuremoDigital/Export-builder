@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Luremo\DataExportBuilder\Tests\Unit;
 
+use Luremo\DataExportBuilder\models\ExportTemplate;
 use Luremo\DataExportBuilder\services\TemplateService;
 use PHPUnit\Framework\TestCase;
 
@@ -135,5 +136,137 @@ final class TemplateServiceTest extends TestCase
                 'targetIds' => [12, 15],
             ],
         ], $template->filters['relations']);
+    }
+
+    public function testCreateTemplateFromRequestNormalizesXmlSettings(): void
+    {
+        $service = new TemplateService();
+
+        $template = $service->createTemplateFromRequest([
+            'name' => 'XML Export',
+            'format' => 'xml',
+            'settings' => [
+                'xml' => [
+                    'rootElement' => '  orders  ',
+                    'rowElement' => 'order',
+                ],
+            ],
+            'fields' => [
+                ['fieldPath' => 'title'],
+            ],
+        ]);
+
+        self::assertSame('xml', $template->format);
+        self::assertSame('orders', $template->settings['xml']['rootElement']);
+        self::assertSame('order', $template->settings['xml']['rowElement']);
+    }
+
+    public function testXmlSettingsDefaultWhenAbsentFromRequest(): void
+    {
+        $service = new TemplateService();
+
+        $template = $service->createTemplateFromRequest([
+            'name' => 'CSV Export',
+            'format' => 'csv',
+            'fields' => [
+                ['fieldPath' => 'title'],
+            ],
+        ]);
+
+        self::assertSame('export', $template->settings['xml']['rootElement']);
+        self::assertSame('row', $template->settings['xml']['rowElement']);
+    }
+
+    public function testXmlSettingsArePreservedWhenSwitchingAwayFromXml(): void
+    {
+        $service = new TemplateService();
+
+        $existing = new ExportTemplate([
+            'name' => 'Orders',
+            'handle' => 'orders',
+            'format' => 'xml',
+            'settings' => [
+                'xml' => ['rootElement' => 'orders', 'rowElement' => 'order'],
+            ],
+        ]);
+
+        // A Standard-edition save (or any payload without settings[xml]) must
+        // not erase previously configured XML names.
+        $template = $service->createTemplateFromRequest([
+            'name' => 'Orders',
+            'format' => 'csv',
+            'fields' => [
+                ['fieldPath' => 'title'],
+            ],
+        ], $existing);
+
+        self::assertSame('csv', $template->format);
+        self::assertSame('orders', $template->settings['xml']['rootElement']);
+        self::assertSame('order', $template->settings['xml']['rowElement']);
+    }
+
+    public function testValidateXmlSettingsRejectsInvalidNamesOnlyForXmlTemplates(): void
+    {
+        $service = new TemplateService();
+
+        $xmlTemplate = new ExportTemplate([
+            'format' => 'xml',
+            'settings' => [
+                'xml' => ['rootElement' => '123root', 'rowElement' => 'xmlRow'],
+            ],
+        ]);
+
+        self::assertFalse($service->validateXmlSettings($xmlTemplate));
+        self::assertSame(
+            'XML element names must start with a letter or underscore.',
+            $xmlTemplate->getFirstError('settings.xml.rootElement')
+        );
+        self::assertSame(
+            'XML element names cannot use the reserved xml or xmlns names.',
+            $xmlTemplate->getFirstError('settings.xml.rowElement')
+        );
+
+        // The same invalid stored values are ignored for non-XML formats so
+        // switching formats never produces validation noise.
+        $csvTemplate = new ExportTemplate([
+            'format' => 'csv',
+            'settings' => [
+                'xml' => ['rootElement' => '123root', 'rowElement' => 'xmlRow'],
+            ],
+        ]);
+
+        self::assertTrue($service->validateXmlSettings($csvTemplate));
+        self::assertSame([], $csvTemplate->getErrors());
+    }
+
+    public function testValidateXmlSettingsRejectsEmptyNames(): void
+    {
+        $service = new TemplateService();
+
+        $template = new ExportTemplate([
+            'format' => 'xml',
+            'settings' => [
+                'xml' => ['rootElement' => '', 'rowElement' => '   '],
+            ],
+        ]);
+
+        self::assertFalse($service->validateXmlSettings($template));
+        self::assertSame('Enter an XML element name.', $template->getFirstError('settings.xml.rootElement'));
+        self::assertSame('Enter an XML element name.', $template->getFirstError('settings.xml.rowElement'));
+    }
+
+    public function testValidateXmlSettingsAcceptsValidNames(): void
+    {
+        $service = new TemplateService();
+
+        $template = new ExportTemplate([
+            'format' => 'xml',
+            'settings' => [
+                'xml' => ['rootElement' => 'export', 'rowElement' => 'row'],
+            ],
+        ]);
+
+        self::assertTrue($service->validateXmlSettings($template));
+        self::assertSame([], $template->getErrors());
     }
 }

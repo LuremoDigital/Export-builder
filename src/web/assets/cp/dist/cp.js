@@ -94,6 +94,73 @@
         update();
     }
 
+    function validateXmlElementName(value) {
+        const name = String(value || '').trim();
+
+        if (!name) {
+            return 'Enter an XML element name.';
+        }
+
+        if (!/^[A-Za-z_]/.test(name)) {
+            return 'XML element names must start with a letter or underscore.';
+        }
+
+        if (!/^[A-Za-z_][A-Za-z0-9_\-.]*$/.test(name)) {
+            return 'Use letters, numbers, underscores, hyphens, or periods. Spaces are not allowed.';
+        }
+
+        if (/^xml/i.test(name)) {
+            return 'XML element names cannot use the reserved xml or xmlns names.';
+        }
+
+        return null;
+    }
+
+    function initXmlFormatSettings() {
+        const formatSelect = document.querySelector('#format');
+        if (!formatSelect) {
+            return;
+        }
+
+        const xmlSettings = document.querySelector('[data-xml-settings]');
+        const xmlFieldHint = document.querySelector('[data-xml-field-hint]');
+
+        function updateVisibility() {
+            const isXml = formatSelect.value === 'xml';
+
+            if (xmlSettings) {
+                xmlSettings.classList.toggle('hidden', !isXml);
+            }
+
+            if (xmlFieldHint) {
+                xmlFieldHint.classList.toggle('hidden', !isXml);
+            }
+        }
+
+        formatSelect.addEventListener('change', updateVisibility);
+        updateVisibility();
+
+        // Lightweight pre-submit feedback for the two XML name fields. The
+        // server-side validation in TemplateService stays authoritative.
+        ['#xmlRootElement', '#xmlRowElement'].forEach(function (selector) {
+            const input = xmlSettings?.querySelector(selector);
+            if (!input) {
+                return;
+            }
+
+            const error = document.createElement('p');
+            error.className = 'deb-xml-name-error hidden';
+            input.insertAdjacentElement('afterend', error);
+
+            input.addEventListener('input', function () {
+                const message = validateXmlElementName(input.value);
+                error.textContent = message || '';
+                error.classList.toggle('hidden', !message);
+                input.classList.toggle('error', !!message);
+            });
+        });
+    }
+
     function parseJson(value, fallback) {
         try {
             return JSON.parse(value || '');
@@ -822,6 +889,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         initEditorTabs();
         initSettingsConditionals();
+        initXmlFormatSettings();
         document.querySelectorAll('[data-deb-field-picker]').forEach(initPicker);
     });
 }());

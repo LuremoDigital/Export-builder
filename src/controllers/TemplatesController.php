@@ -7,6 +7,7 @@ namespace Luremo\DataExportBuilder\controllers;
 use Craft;
 use craft\web\Controller;
 use Luremo\DataExportBuilder\helpers\CapabilityHelper;
+use Luremo\DataExportBuilder\helpers\ExportFormatHelper;
 use Luremo\DataExportBuilder\Plugin;
 use Luremo\DataExportBuilder\web\assets\cp\CpAsset;
 use yii\web\ForbiddenHttpException;
@@ -63,6 +64,7 @@ final class TemplatesController extends Controller
             'template' => $template,
             'fieldPayload' => $fieldPayload,
             'isProEdition' => CapabilityHelper::isProEdition(),
+            'formatOptions' => ExportFormatHelper::optionsForEdition(CapabilityHelper::getEdition()),
             'elementTypeOptions' => Plugin::$plugin->get('fieldDiscovery')->getElementTypeOptions(),
             'runs' => $template->id ? Plugin::$plugin->get('templates')->getRunsForTemplate($template->id) : [],
             'volumeOptions' => Plugin::$plugin->get('deliveries')->getVolumeOptions(),
@@ -108,6 +110,7 @@ final class TemplatesController extends Controller
                 'template' => $template,
                 'fieldPayload' => $fieldPayload,
                 'isProEdition' => CapabilityHelper::isProEdition(),
+                'formatOptions' => ExportFormatHelper::optionsForEdition(CapabilityHelper::getEdition()),
                 'elementTypeOptions' => Plugin::$plugin->get('fieldDiscovery')->getElementTypeOptions(),
                 'runs' => $template->id ? Plugin::$plugin->get('templates')->getRunsForTemplate((int)$template->id) : [],
                 'volumeOptions' => Plugin::$plugin->get('deliveries')->getVolumeOptions(),
