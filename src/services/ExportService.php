@@ -12,9 +12,11 @@ use craft\helpers\Db;
 use Luremo\DataExportBuilder\helpers\CapabilityHelper;
 use Luremo\DataExportBuilder\helpers\DateFilterHelper;
 use Luremo\DataExportBuilder\helpers\ExportFileHelper;
+use Luremo\DataExportBuilder\helpers\ExportFormatHelper;
 use Luremo\DataExportBuilder\helpers\FilterApplier;
 use Luremo\DataExportBuilder\helpers\FilterSpecMapper;
 use Luremo\DataExportBuilder\helpers\FieldValueHelper;
+use Luremo\DataExportBuilder\helpers\XmlExportHelper;
 use Luremo\DataExportBuilder\jobs\RunExportJob;
 use Luremo\DataExportBuilder\models\ExportField;
 use Luremo\DataExportBuilder\models\ExportRun;
@@ -86,9 +88,11 @@ final class ExportService extends Component
 
             $filePath = ExportFileHelper::buildFilePath($template, new ExportRun(['id' => (int)$runRecord->id, 'format' => $template->format, 'templateId' => $template->id ?? 0]));
             $rowCount = match ($template->format) {
-                'json' => $this->streamJsonExport($query, $template, $filePath, $total, $progressCallback),
-                'xlsx' => $this->streamXlsxExport($query, $template, $filePath, $total, $progressCallback),
-                default => $this->streamCsvExport($query, $template, $filePath, $total, $progressCallback),
+                ExportFormatHelper::FORMAT_CSV => $this->streamCsvExport($query, $template, $filePath, $total, $progressCallback),
+                ExportFormatHelper::FORMAT_JSON => $this->streamJsonExport($query, $template, $filePath, $total, $progressCallback),
+                ExportFormatHelper::FORMAT_XLSX => $this->streamXlsxExport($query, $template, $filePath, $total, $progressCallback),
+                ExportFormatHelper::FORMAT_XML => $this->streamXmlExport($query, $template, $filePath, $total, $progressCallback),
+                default => throw new Exception(sprintf('Unsupported export format "%s".', $template->format)),
             };
 
             $runRecord->status = ExportRun::STATUS_COMPLETED;
@@ -358,6 +362,59 @@ final class ExportService extends Component
         }
 
         $writer->close();
+
+        return $processed;
+    }
+
+    private function streamXmlExport(
+        mixed $query,
+        ExportTemplate $template,
+        string $filePath,
+        int $total,
+        ?callable $progressCallback = null
+    ): int {
+        $fields = $template->getFieldsSorted();
+        $elementNames = XmlExportHelper::elementNamesForLabels(array_map(
+            static fn(ExportField $field): string => $field->columnLabel,
+            array_values($fields)
+        ));
+
+        $xmlSettings = is_array($template->settings['xml'] ?? null) ? $template->settings['xml'] : [];
+        $rootElement = trim((string)($xmlSettings['rootElement'] ?? '')) ?: 'export';
+        $rowElement = trim((string)($xmlSettings['rowElement'] ?? '')) ?: 'row';
+
+        // The writer validates the root/row names and deletes the partial
+        // file on abort, so a failed run never leaves a malformed document
+        // behind in export storage.
+        $writer = new XmlExportWriter($filePath, $rootElement, $rowElement);
+        $writer->open();
+
+        $processed = 0;
+
+        try {
+            foreach ($query->batch($this->batchSize) as $elements) {
+                foreach ($elements as $element) {
+                    $row = $this->buildRow($element, $fields, FieldValueHelper::MODE_FLAT_TEXT);
+                    $cells = array_combine($elementNames, array_map(
+                        static fn(mixed $value): string => (string)($value ?? ''),
+                        array_values($row)
+                    ));
+
+                    $writer->writeRow($cells);
+                    $processed++;
+                }
+
+                if ($progressCallback !== null) {
+                    $progressCallback($processed, $total);
+                }
+            }
+
+            $writer->close();
+        } catch (\Throwable $exception) {
+            $writer->abort();
+
+            throw $exception;
+        }
 
         return $processed;
     }

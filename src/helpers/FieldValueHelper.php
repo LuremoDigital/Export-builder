@@ -19,6 +19,15 @@ final class FieldValueHelper
 {
     public const DATE_FORMAT = 'Y-m-d H:i:s';
 
+    /**
+     * Named flat-text normalization mode: scalars stay scalar, booleans
+     * become "true"/"false", null becomes "", and arrays/relations flatten
+     * to human-readable comma-separated strings — the same visible shape CSV
+     * uses. XML deliberately resolves values in this mode instead of relying
+     * on the accidental "any non-JSON format behaves like CSV" fallback.
+     */
+    public const MODE_FLAT_TEXT = 'flatText';
+
     public static function resolveFieldValue(mixed $context, string $fieldPath, string $format = 'csv'): mixed
     {
         if ($context instanceof FormieSubmission && self::formieSubmissionHasFieldPath($context, $fieldPath)) {
