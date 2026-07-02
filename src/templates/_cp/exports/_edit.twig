@@ -73,6 +73,7 @@
                 {% if isProEdition %}
                     <div class="deb-editor-nav" data-editor-tabs>
                         <button type="button" class="deb-editor-nav__tab is-active" data-editor-tab-trigger="setup">Export</button>
+                        <button type="button" class="deb-editor-nav__tab{% if not (fieldPayload.supportsFieldConditionFilter ?? false) and not (fieldPayload.supportsRelationFilter ?? false) %} hidden{% endif %}" data-editor-tab-trigger="advanced">Advanced filters</button>
                         <button type="button" class="deb-editor-nav__tab" data-editor-tab-trigger="settings">Settings</button>
                     </div>
                 {% endif %}
@@ -176,7 +177,7 @@
                                     label: 'Status Filter',
                                     id: 'statuses',
                                     name: 'filters[statuses]',
-                                    options: fieldPayload.statuses ?? [],
+                                    options: [{ label: 'All statuses', value: '' }]|merge(fieldPayload.statuses ?? []),
                                     values: statuses,
                                     instructions: 'Optional. Leave empty to include all statuses.'
                                 }) }}
@@ -241,7 +242,18 @@
                         </div>
                     </div>
 
-                    <section class="deb-card deb-card--subtle{% if not (fieldPayload.supportsFieldConditionFilter ?? false) and not (fieldPayload.supportsRelationFilter ?? false) %} hidden{% endif %}" data-advanced-filter-card>
+                    {% include 'data-export-builder/_cp/exports/_includes/field-picker' with {
+                        fieldPayload: fieldPayload,
+                        selectedFields: selectedFields
+                    } %}
+
+                    {% if template.getErrors('fields') %}
+                        <p class="error">{{ template.getFirstError('fields') }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="deb-editor-panel{% if isProEdition %} hidden{% endif %}"{% if isProEdition %} data-editor-tab-panel="advanced"{% endif %}>
+                    <section class="deb-card{% if not isProEdition %} deb-card--subtle{% endif %}{% if not (fieldPayload.supportsFieldConditionFilter ?? false) and not (fieldPayload.supportsRelationFilter ?? false) %} hidden{% endif %}" data-advanced-filter-card>
                         <div class="deb-card__header deb-card__header--inline">
                             <div>
                                 <h2>Advanced filters{% if advancedFilterCount %} <span class="deb-count-badge">{{ advancedFilterCount }}</span>{% endif %}</h2>
@@ -319,15 +331,6 @@
                             </div>
                         </div>
                     </section>
-
-                    {% include 'data-export-builder/_cp/exports/_includes/field-picker' with {
-                        fieldPayload: fieldPayload,
-                        selectedFields: selectedFields
-                    } %}
-
-                    {% if template.getErrors('fields') %}
-                        <p class="error">{{ template.getFirstError('fields') }}</p>
-                    {% endif %}
                 </div>
 
                 {% if not isProEdition %}

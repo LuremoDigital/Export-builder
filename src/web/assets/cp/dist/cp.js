@@ -384,7 +384,7 @@
         syncSelectOptions(sectionSelect, payload.sections || [], sectionSelect?.value);
         syncSelectOptions(siteSelect, payload.sites || [], siteSelect?.value);
         syncSelectOptions(formSelect, payload.forms || [], formSelect?.value);
-        syncMultiSelectOptions(statusSelect, payload.statuses || []);
+        syncMultiSelectOptions(statusSelect, [{ label: 'All statuses', value: '' }].concat(payload.statuses || []));
         syncAdvancedFilterOptions(root);
     }
 
@@ -398,7 +398,9 @@
         const fieldConditionRow = document.querySelector(root.dataset.fieldConditionFilterTarget || '');
         const relationRow = document.querySelector(root.dataset.relationFilterTarget || '');
         const advancedCard = document.querySelector(root.dataset.advancedFilterCard || '');
+        const advancedTab = document.querySelector('[data-editor-tab-trigger="advanced"]');
         const populatedToggle = root.querySelector(root.dataset.populatedToggle || '');
+        const supportsAdvancedFilters = payload.supportsFieldConditionFilter || payload.supportsRelationFilter;
 
         if (sectionRow) {
             sectionRow.classList.toggle('hidden', !payload.supportsSectionFilter);
@@ -429,7 +431,14 @@
         }
 
         if (advancedCard) {
-            advancedCard.classList.toggle('hidden', !payload.supportsFieldConditionFilter && !payload.supportsRelationFilter);
+            advancedCard.classList.toggle('hidden', !supportsAdvancedFilters);
+        }
+
+        if (advancedTab) {
+            advancedTab.classList.toggle('hidden', !supportsAdvancedFilters);
+            if (!supportsAdvancedFilters && advancedTab.classList.contains('is-active')) {
+                document.querySelector('[data-editor-tab-trigger="setup"]')?.click();
+            }
         }
 
         if (populatedToggle) {
