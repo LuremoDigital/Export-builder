@@ -126,7 +126,7 @@ final class DeliveryService extends Component
                 $run->rowCount ?? 'unknown',
                 $run->fileName ?? 'export'
             ))
-            ->attach($run->filePath);
+            ->attach($run->filePath, ['fileName' => $run->fileName ?? basename($run->filePath)]);
 
         if (!$message->send()) {
             throw new Exception('Export email delivery failed.');

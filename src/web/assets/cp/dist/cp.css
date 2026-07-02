@@ -218,6 +218,12 @@
     box-shadow: 0 -2px 12px rgba(31, 41, 51, 0.08);
 }
 
+.deb-save-button {
+    min-width: 180px;
+    font-weight: 700;
+    box-shadow: 0 8px 18px rgba(18, 116, 211, 0.22);
+}
+
 .deb-field-picker {
     display: grid;
     gap: 20px;
