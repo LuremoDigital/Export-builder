@@ -12,6 +12,11 @@
 - unknown export formats now fail with a clear error everywhere instead of silently falling back to CSV
 - webhook delivery payloads can now carry `xml` as a format value; integrators validating the format field should allow it
 - the plugin now requires the PHP `xmlwriter` extension (enabled by default in PHP)
+- run history now shows "Completed, no matching rows" instead of "0 rows" for a completed run with no results
+- polished the Save Template button styling
+
+### Fixed
+- email delivery attachments now use the export's actual file name instead of a generated temporary name
 
 ## 1.1.0 - 2026-06-29
 
