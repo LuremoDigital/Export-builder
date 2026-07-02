@@ -54,14 +54,6 @@ final class ExportFormatHelper
     ];
 
     /**
-     * @return array<string, array{label:string,mimeType:string,extension:string,proOnly:bool}>
-     */
-    public static function all(): array
-    {
-        return self::FORMATS;
-    }
-
-    /**
      * @return string[]
      */
     public static function allowedFormatHandles(): array
