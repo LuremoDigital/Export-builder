@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.2.0 - 2026-07-02
+
+### Added
+- XML export format (Pro): generic row-based XML output — one row node per exported item, one child element per selected field, with a configurable root and row element name
+- inline XML Settings under Output Format with clear, field-level name validation (invalid names are rejected, never silently rewritten), plus a hint explaining how column titles become XML tag names and how duplicate names get `_2`/`_3` suffixes
+- XML output streams to disk with flat memory, escapes values safely, strips characters that are illegal in XML 1.0, and verifies writes so a failed or interrupted run never exposes a partial file as a completed export
+
+### Changed
+- export format metadata (label, MIME type, file extension, edition gating) now lives in a single registry, so every surface (validation, downloads, delivery, format dropdown) agrees on the supported formats
+- unknown export formats now fail with a clear error everywhere instead of silently falling back to CSV
+- webhook delivery payloads can now carry `xml` as a format value; integrators validating the format field should allow it
+- the plugin now requires the PHP `xmlwriter` extension (enabled by default in PHP)
+
 ## 1.1.0 - 2026-06-29
 
 ### Added
