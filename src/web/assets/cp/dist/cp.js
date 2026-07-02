@@ -240,6 +240,18 @@
             row.querySelector('[data-name="sortOrder"]').name = 'fields[' + index + '][sortOrder]';
             row.querySelector('[data-name="sortOrder"]').value = String(index + 1);
             row.querySelector('[data-name="columnLabel"]').name = 'fields[' + index + '][columnLabel]';
+            const separator = row.querySelector('[data-name="settingSeparator"]');
+            if (separator) {
+                separator.name = 'fields[' + index + '][settings][separator]';
+            }
+            const warnWhenBlank = row.querySelector('[data-name="settingWarnWhenBlank"]');
+            if (warnWhenBlank) {
+                warnWhenBlank.name = 'fields[' + index + '][settings][warnWhenBlank]';
+            }
+            const decimalPlaces = row.querySelector('[data-name="settingDecimalPlaces"]');
+            if (decimalPlaces) {
+                decimalPlaces.name = 'fields[' + index + '][settings][decimalPlaces]';
+            }
         });
 
         const emptyState = root.querySelector('[data-selected-empty]');
@@ -258,6 +270,9 @@
             '<div class="deb-selected-row__main">',
             '<input type="hidden" data-name="fieldPath" value="' + escapeHtml(field.path) + '">',
             '<input type="hidden" data-name="sortOrder" value="0">',
+            field.settings?.separator ? '<input type="hidden" data-name="settingSeparator" value="' + escapeHtml(field.settings.separator) + '">' : '',
+            field.settings?.warnWhenBlank ? '<input type="hidden" data-name="settingWarnWhenBlank" value="1">' : '',
+            Number.isInteger(field.settings?.decimalPlaces) ? '<input type="hidden" data-name="settingDecimalPlaces" value="' + String(field.settings.decimalPlaces) + '">' : '',
             '<div class="deb-selected-path-wrap">',
             '<button type="button" class="deb-drag-handle" data-drag-handle draggable="true" aria-label="Drag to reorder" title="Drag to reorder">Drag</button>',
             '<div class="deb-selected-path">' + escapeHtml(field.path) + '</div>',
@@ -775,6 +790,13 @@
                 const preset = root._payload?.presets?.[Number(target.dataset.applyPreset)];
                 const selectedFields = root.querySelector('[data-selected-fields]');
                 if (!preset || !selectedFields) {
+                    return;
+                }
+
+                if (
+                    selectedFields.querySelector('[data-selected-row]') &&
+                    !confirm('Applying this preset will replace your current field selection. Continue?')
+                ) {
                     return;
                 }
 

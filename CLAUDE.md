@@ -17,3 +17,7 @@ Key routing rules:
 - Save progress -> invoke /context-save
 - Resume context -> invoke /context-restore
 - Author a backlog-ready spec/issue -> invoke /spec
+
+## Commerce accounting preset validation
+
+The Commerce accounting preset may be implemented without store-owner or agency interviews. Use `docs/validation-log.md` for optional post-implementation feedback, including an accountant or bookkeeper field review before release when available.

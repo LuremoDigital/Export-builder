@@ -1,5 +1,17 @@
 # Changelog
 
+## Unreleased
+
+### Added
+- Pro-only Commerce Accounting Export preset with 19 verified Craft Commerce order columns, two-decimal money values, and line-item values joined with ` | `
+- fixture-backed Commerce integration suite for exact accounting CSV column order, cell values, empty results, field-setting persistence, and required-field warnings
+
+### Changed
+- Commerce order date filters now use the completed order's `dateOrdered` value instead of the cart's creation date
+
+### Fixed
+- applying a preset over existing selected columns now asks for confirmation before replacing them
+
 ## 1.2.0 - 2026-07-02
 
 ### Added

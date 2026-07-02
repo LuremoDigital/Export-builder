@@ -92,6 +92,35 @@ final class FieldValueHelperTest extends TestCase
         self::assertIsArray(FieldValueHelper::normalizeResolvedValue($value, 'json'));
     }
 
+    public function testResolveFieldValueSupportsPerFieldArraySeparator(): void
+    {
+        $order = (object)[
+            'lineItems' => [
+                (object)['sku' => 'RING-01'],
+                (object)['sku' => 'CHAIN-02'],
+            ],
+        ];
+
+        self::assertSame(
+            'RING-01 | CHAIN-02',
+            FieldValueHelper::resolveFieldValue($order, 'lineItems.sku', 'csv', ' | ')
+        );
+        self::assertSame(
+            'RING-01, CHAIN-02',
+            FieldValueHelper::resolveFieldValue($order, 'lineItems.sku', 'csv')
+        );
+    }
+
+    public function testResolveFieldValueFormatsAccountingDecimalsWithoutChangingJson(): void
+    {
+        self::assertSame('0.00', FieldValueHelper::normalizeResolvedValue(0.0, 'csv', ', ', 2));
+        self::assertSame(
+            '20.00 | 19.50',
+            FieldValueHelper::normalizeResolvedValue([20, 19.5], 'csv', ' | ', 2)
+        );
+        self::assertSame([20, 19.5], FieldValueHelper::normalizeResolvedValue([20, 19.5], 'json', ', ', 2));
+    }
+
     public function testResolveFieldValueNormalizesBooleansAndNulls(): void
     {
         self::assertSame('true', FieldValueHelper::normalizeResolvedValue(true, 'csv'));

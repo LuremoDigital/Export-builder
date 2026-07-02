@@ -68,4 +68,31 @@ final class FieldPickerMarkupTest extends TestCase
             'cp.js must not iterate [data-relation-filter-row]; that matches the section wrapper and crashes init.'
         );
     }
+
+    public function testPresetFieldSettingsRoundTripThroughHiddenInputs(): void
+    {
+        $js = self::read('src/web/assets/cp/dist/cp.js');
+        $twig = self::read('src/templates/_cp/exports/_includes/field-picker.twig');
+
+        self::assertStringContainsString('field.settings?.separator', $js);
+        self::assertStringContainsString('field.settings?.warnWhenBlank', $js);
+        self::assertStringContainsString('field.settings?.decimalPlaces', $js);
+        self::assertStringContainsString('[settings][separator]', $js);
+        self::assertStringContainsString('[settings][warnWhenBlank]', $js);
+        self::assertStringContainsString('[settings][decimalPlaces]', $js);
+        self::assertStringContainsString('field.settings.separator', $twig);
+        self::assertStringContainsString('field.settings.warnWhenBlank', $twig);
+        self::assertStringContainsString('field.settings.decimalPlaces', $twig);
+    }
+
+    public function testApplyingPresetConfirmsBeforeReplacingSelectedFields(): void
+    {
+        $js = self::read('src/web/assets/cp/dist/cp.js');
+
+        self::assertStringContainsString("selectedFields.querySelector('[data-selected-row]')", $js);
+        self::assertStringContainsString(
+            "confirm('Applying this preset will replace your current field selection. Continue?')",
+            $js
+        );
+    }
 }

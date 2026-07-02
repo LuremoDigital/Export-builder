@@ -86,6 +86,38 @@ final class TemplateServiceTest extends TestCase
         self::assertSame('slug', $template->fields[0]->columnLabel);
     }
 
+    public function testCreateTemplateFromRequestNormalizesSupportedFieldSettings(): void
+    {
+        $template = (new TemplateService())->createTemplateFromRequest([
+            'name' => 'Accounting',
+            'fields' => [
+                [
+                    'fieldPath' => 'lineItems.sku',
+                    'settings' => [
+                        'separator' => ' | ',
+                        'decimalPlaces' => '2',
+                        'warnWhenBlank' => '1',
+                        'unknown' => 'discard me',
+                    ],
+                ],
+                [
+                    'fieldPath' => 'lineItems.title',
+                    'settings' => [
+                        'separator' => ['invalid'],
+                        'warnWhenBlank' => '0',
+                    ],
+                ],
+            ],
+        ]);
+
+        self::assertSame([
+            'separator' => ' | ',
+            'warnWhenBlank' => true,
+            'decimalPlaces' => 2,
+        ], $template->fields[0]->settings);
+        self::assertSame([], $template->fields[1]->settings);
+    }
+
     public function testCreateTemplateFromRequestNormalizesAdvancedFiltersAgainstDiscoveryPayload(): void
     {
         $service = new TemplateService();

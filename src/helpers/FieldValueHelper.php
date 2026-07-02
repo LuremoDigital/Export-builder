@@ -32,10 +32,16 @@ final class FieldValueHelper
      */
     public const MODE_FLAT_TEXT = 'flatText';
 
-    public static function resolveFieldValue(mixed $context, string $fieldPath, string $format = 'csv'): mixed
+    public static function resolveFieldValue(
+        mixed $context,
+        string $fieldPath,
+        string $format = 'csv',
+        string $arraySeparator = ', ',
+        ?int $decimalPlaces = null
+    ): mixed
     {
         if ($context instanceof FormieSubmission && self::formieSubmissionHasFieldPath($context, $fieldPath)) {
-            return self::normalizeResolvedValue($context->getFieldValue($fieldPath), $format);
+            return self::normalizeResolvedValue($context->getFieldValue($fieldPath), $format, $arraySeparator, $decimalPlaces);
         }
 
         $segments = array_values(array_filter(explode('.', $fieldPath), static fn(string $segment): bool => $segment !== ''));
@@ -45,10 +51,15 @@ final class FieldValueHelper
             $value = self::drillInto($value, $segment);
         }
 
-        return self::normalizeResolvedValue($value, $format);
+        return self::normalizeResolvedValue($value, $format, $arraySeparator, $decimalPlaces);
     }
 
-    public static function normalizeResolvedValue(mixed $value, string $format = 'csv'): mixed
+    public static function normalizeResolvedValue(
+        mixed $value,
+        string $format = 'csv',
+        string $arraySeparator = ', ',
+        ?int $decimalPlaces = null
+    ): mixed
     {
         if ($value instanceof ElementQueryInterface) {
             $value = $value->all();
@@ -76,7 +87,7 @@ final class FieldValueHelper
 
         if (is_array($value)) {
             $normalized = array_values(array_map(
-                static fn(mixed $item): mixed => self::normalizeResolvedValue($item, $format),
+                static fn(mixed $item): mixed => self::normalizeResolvedValue($item, $format, $arraySeparator, $decimalPlaces),
                 $value
             ));
 
@@ -92,7 +103,7 @@ final class FieldValueHelper
                 return (string)$item;
             }, array_filter($normalized, static fn(mixed $item): bool => $item !== null && $item !== ''));
 
-            return implode(', ', $flattened);
+            return implode($arraySeparator, $flattened);
         }
 
         if ($value instanceof FormieFieldValueInterface) {
@@ -110,6 +121,10 @@ final class FieldValueHelper
 
         if ($value instanceof Stringable) {
             return (string)$value;
+        }
+
+        if ($format !== 'json' && $decimalPlaces !== null && (is_int($value) || is_float($value))) {
+            return number_format((float)$value, $decimalPlaces, '.', '');
         }
 
         if (is_scalar($value)) {

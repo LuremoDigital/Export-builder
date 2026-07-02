@@ -88,7 +88,7 @@ final class ExportService extends Component
 
             $filePath = ExportFileHelper::buildFilePath($template, new ExportRun(['id' => (int)$runRecord->id, 'format' => $template->format, 'templateId' => $template->id ?? 0]));
             $rowCount = match ($template->format) {
-                ExportFormatHelper::FORMAT_CSV => $this->streamCsvExport($query, $template, $filePath, $total, $progressCallback),
+                ExportFormatHelper::FORMAT_CSV => $this->streamCsvExport($query, $template, $filePath, $total, (int)$runRecord->id, $progressCallback),
                 ExportFormatHelper::FORMAT_JSON => $this->streamJsonExport($query, $template, $filePath, $total, $progressCallback),
                 ExportFormatHelper::FORMAT_XLSX => $this->streamXlsxExport($query, $template, $filePath, $total, $progressCallback),
                 ExportFormatHelper::FORMAT_XML => $this->streamXmlExport($query, $template, $filePath, $total, $progressCallback),
@@ -205,7 +205,10 @@ final class ExportService extends Component
 
         $dateFrom = DateFilterHelper::normalizeDateInput($template->filters['dateFrom'] ?? null);
         $dateTo = DateFilterHelper::normalizeDateInput($template->filters['dateTo'] ?? null);
-        if (($dateFrom || $dateTo) && method_exists($query, 'dateCreated')) {
+        $dateQueryMethod = $template->elementType === 'orders' && method_exists($query, 'dateOrdered')
+            ? 'dateOrdered'
+            : 'dateCreated';
+        if (($dateFrom || $dateTo) && method_exists($query, $dateQueryMethod)) {
             // Leading 'and' is required: a Craft element-query array param without
             // it defaults to OR, so a from+to range would match (after-from OR
             // before-to) — i.e. almost every record. 'and' makes it a true range.
@@ -216,7 +219,7 @@ final class ExportService extends Component
             if ($dateTo) {
                 $range[] = '<= ' . $dateTo . ' 23:59:59';
             }
-            $query->dateCreated($range);
+            $query->{$dateQueryMethod}($range);
         }
 
         if (method_exists($query, 'orderBy')) {
@@ -251,6 +254,7 @@ final class ExportService extends Component
         ExportTemplate $template,
         string $filePath,
         int $total,
+        int $runId,
         ?callable $progressCallback = null
     ): int {
         $handle = fopen($filePath, 'wb');
@@ -262,19 +266,40 @@ final class ExportService extends Component
         fputcsv($handle, array_map(static fn(ExportField $field): string => $field->columnLabel, $fields));
 
         $processed = 0;
+        $blankCounts = [];
 
-        foreach ($query->batch($this->batchSize) as $elements) {
-            foreach ($elements as $element) {
-                fputcsv($handle, $this->buildRow($element, $fields, 'csv'));
-                $processed++;
-            }
+        try {
+            foreach ($query->batch($this->batchSize) as $elements) {
+                foreach ($elements as $element) {
+                    $row = $this->buildRow($element, $fields, 'csv');
+                    fputcsv($handle, $row);
 
-            if ($progressCallback !== null) {
-                $progressCallback($processed, $total);
+                    foreach ($fields as $index => $field) {
+                        if (($field->settings['warnWhenBlank'] ?? false) && ($row[$index] ?? '') === '') {
+                            $blankCounts[$field->columnLabel] = ($blankCounts[$field->columnLabel] ?? 0) + 1;
+                        }
+                    }
+
+                    $processed++;
+                }
+
+                if ($progressCallback !== null) {
+                    $progressCallback($processed, $total);
+                }
             }
+        } finally {
+            fclose($handle);
         }
 
-        fclose($handle);
+        foreach ($blankCounts as $field => $blankCount) {
+            Craft::warning(sprintf(
+                'Accounting export field "%s" was blank for %d of %d rows (run ID: %d).',
+                $field,
+                $blankCount,
+                $processed,
+                $runId
+            ), 'data-export-builder');
+        }
 
         return $processed;
     }
@@ -429,7 +454,7 @@ final class ExportService extends Component
     private function buildRow(mixed $element, array $fields, string $format): array
     {
         return array_map(
-            static fn(ExportField $field): mixed => FieldValueHelper::resolveFieldValue($element, $field->fieldPath, $format),
+            static fn(ExportField $field): mixed => self::resolveExportFieldValue($element, $field, $format),
             $fields
         );
     }
@@ -443,10 +468,24 @@ final class ExportService extends Component
         $row = [];
 
         foreach ($fields as $field) {
-            $row[$field->columnLabel] = FieldValueHelper::resolveFieldValue($element, $field->fieldPath, $format);
+            $row[$field->columnLabel] = self::resolveExportFieldValue($element, $field, $format);
         }
 
         return $row;
+    }
+
+    private static function resolveExportFieldValue(mixed $element, ExportField $field, string $format): mixed
+    {
+        $separator = $field->settings['separator'] ?? ', ';
+        $decimalPlaces = $field->settings['decimalPlaces'] ?? null;
+
+        return FieldValueHelper::resolveFieldValue(
+            $element,
+            $field->fieldPath,
+            $format,
+            is_string($separator) ? $separator : ', ',
+            is_int($decimalPlaces) ? $decimalPlaces : null
+        );
     }
 
     private function buildWheelformMessageQuery(ExportTemplate $template): mixed

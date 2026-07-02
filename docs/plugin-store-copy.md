@@ -14,6 +14,7 @@ Instead of rebuilding one-off export templates for every reporting request, migr
 
 - export entries, users, categories, tags, and assets
 - export Commerce orders, products, and variants in Pro
+- start an accounting handoff from a country-neutral Commerce order preset with revenue, recorded tax totals, discounts, shipping, currency, and line items
 - discover native fields, custom fields, relation paths, and practical Matrix paths
 - rename columns and control output order
 - apply section, site, form, and created-date filters where supported
@@ -29,7 +30,7 @@ Instead of rebuilding one-off export templates for every reporting request, migr
 - agencies delivering multiple Craft sites every year
 - freelancers who keep rebuilding export utilities
 - in-house teams with repeated operational export requests
-- Commerce projects that need practical order exports
+- Commerce projects that need accountant-ready order exports without custom PHP or spreadsheet cleanup
 
 ### Positioning
 

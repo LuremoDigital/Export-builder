@@ -48,6 +48,15 @@
                         <div class="deb-selected-row__main" draggable="true">
                             <input type="hidden" data-name="fieldPath" name="fields[{{ loop.index0 }}][fieldPath]" value="{{ field.fieldPath }}">
                             <input type="hidden" data-name="sortOrder" name="fields[{{ loop.index0 }}][sortOrder]" value="{{ field.sortOrder }}">
+                            {% if field.settings.separator ?? null %}
+                                <input type="hidden" data-name="settingSeparator" name="fields[{{ loop.index0 }}][settings][separator]" value="{{ field.settings.separator }}">
+                            {% endif %}
+                            {% if field.settings.warnWhenBlank ?? false %}
+                                <input type="hidden" data-name="settingWarnWhenBlank" name="fields[{{ loop.index0 }}][settings][warnWhenBlank]" value="1">
+                            {% endif %}
+                            {% if field.settings.decimalPlaces is defined %}
+                                <input type="hidden" data-name="settingDecimalPlaces" name="fields[{{ loop.index0 }}][settings][decimalPlaces]" value="{{ field.settings.decimalPlaces }}">
+                            {% endif %}
                             <div class="deb-selected-path-wrap">
                                 <button type="button" class="deb-drag-handle" data-drag-handle draggable="true" aria-label="Drag to reorder" title="Drag to reorder">Drag</button>
                                 <div class="deb-selected-path">{{ field.fieldPath }}</div>

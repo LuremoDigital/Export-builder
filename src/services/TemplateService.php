@@ -392,13 +392,45 @@ final class TemplateService extends Component
                 'fieldPath' => $fieldPath,
                 'columnLabel' => $columnLabel !== '' ? $columnLabel : $defaultColumnLabel,
                 'sortOrder' => (int)($field['sortOrder'] ?? ($index + 1)),
-                'settings' => is_array($field['settings'] ?? null) ? $field['settings'] : [],
+                'settings' => $this->normalizeFieldSettings($field['settings'] ?? null),
             ]);
         }
 
         usort($models, static fn(ExportField $a, ExportField $b): int => $a->sortOrder <=> $b->sortOrder);
 
         return $models;
+    }
+
+    /**
+     * @return array{separator?:string,decimalPlaces?:int,warnWhenBlank?:bool}
+     */
+    private function normalizeFieldSettings(mixed $settings): array
+    {
+        if (!is_array($settings)) {
+            return [];
+        }
+
+        $normalized = [];
+        $separator = $settings['separator'] ?? null;
+        if (is_scalar($separator)) {
+            $separator = (string)$separator;
+            if (trim($separator) !== '' && mb_strlen($separator) <= 20) {
+                $normalized['separator'] = $separator;
+            }
+        }
+
+        if (filter_var($settings['warnWhenBlank'] ?? false, FILTER_VALIDATE_BOOLEAN)) {
+            $normalized['warnWhenBlank'] = true;
+        }
+
+        if (is_numeric($settings['decimalPlaces'] ?? null)) {
+            $decimalPlaces = (int)$settings['decimalPlaces'];
+            if ($decimalPlaces >= 0 && $decimalPlaces <= 6) {
+                $normalized['decimalPlaces'] = $decimalPlaces;
+            }
+        }
+
+        return $normalized;
     }
 
     private function isQueueThresholdAllowed(array $settings): bool
