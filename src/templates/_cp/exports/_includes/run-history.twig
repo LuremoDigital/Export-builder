@@ -20,7 +20,13 @@
                     <div class="deb-run-status">
                         <span class="deb-badge deb-badge--{{ run.status }}">{{ run.status|title }}</span>
                         {% if run.rowCount is not null %}
-                            <span class="light">{{ run.rowCount }} rows</span>
+                            <span class="light">
+                                {% if run.status == 'completed' and run.rowCount == 0 %}
+                                    Completed, no matching rows
+                                {% else %}
+                                    {{ run.rowCount }} {{ run.rowCount == 1 ? 'row' : 'rows' }}
+                                {% endif %}
+                            </span>
                         {% endif %}
                         {% if run.storageType %}
                             <span class="light">{{ run.storageType|title }}</span>
