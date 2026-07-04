@@ -79,6 +79,7 @@ final class FieldDiscoveryService extends Component
             'supportsSiteFilter' => in_array($elementType, ['entries', 'categories', 'tags', 'assets', CapabilityHelper::ELEMENT_TYPE_PRODUCTS, CapabilityHelper::ELEMENT_TYPE_VARIANTS], true),
             'supportsFormFilter' => $supportsFormFilter,
             'supportsStatusFilter' => $this->supportsStatusFilter($elementType),
+            'supportsCompletedFilter' => $elementType === 'orders',
             'supportsKeywordFilter' => $this->supportsKeywordFilter($elementType),
             'supportsFieldConditionFilter' => $this->supportsFieldConditionFilter($elementType),
             'supportsRelationFilter' => $this->supportsRelationFilter($elementType),

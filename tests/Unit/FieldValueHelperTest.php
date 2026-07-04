@@ -119,6 +119,11 @@ final class FieldValueHelperTest extends TestCase
             FieldValueHelper::normalizeResolvedValue([20, 19.5], 'csv', ' | ', 2)
         );
         self::assertSame([20, 19.5], FieldValueHelper::normalizeResolvedValue([20, 19.5], 'json', ', ', 2));
+        self::assertSame(
+            ['20.00', '19.50'],
+            FieldValueHelper::normalizeResolvedValue([20, 19.5], FieldValueHelper::MODE_XLSX, ', ', 2)
+        );
+        self::assertTrue(FieldValueHelper::normalizeResolvedValue(true, FieldValueHelper::MODE_XLSX));
     }
 
     public function testResolveFieldValueNormalizesBooleansAndNulls(): void

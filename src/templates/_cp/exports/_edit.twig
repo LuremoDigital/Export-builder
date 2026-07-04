@@ -10,6 +10,7 @@
 {% set formId = template.filters.formId ?? '' %}
 {% set dateFrom = template.filters.dateFrom ?? '' %}
 {% set dateTo = template.filters.dateTo ?? '' %}
+{% set completedOnly = template.filters.completedOnly ?? false %}
 {% set statuses = template.filters.statuses ?? [] %}
 {% set keyword = template.filters.keyword ?? '' %}
 {% set fieldConditions = template.filters.fieldConditions ?? [] %}
@@ -180,6 +181,16 @@
                                     options: [{ label: 'All statuses', value: '' }]|merge(fieldPayload.statuses ?? []),
                                     values: statuses,
                                     instructions: 'Optional. Leave empty to include all statuses.'
+                                }) }}
+                            </div>
+
+                            <div data-completed-filter-row>
+                                {{ forms.checkboxField({
+                                    label: 'Completed orders only',
+                                    id: 'completedOnly',
+                                    name: 'filters[completedOnly]',
+                                    value: '1',
+                                    checked: completedOnly
                                 }) }}
                             </div>
 

@@ -41,6 +41,7 @@ final class PresetServiceTest extends TestCase
 
         self::assertSame('dateOrdered', $accounting['fields'][1]['path']);
         self::assertSame('paidStatus', $accounting['fields'][7]['path']);
+        self::assertTrue($accounting['filters']['completedOnly']);
         self::assertSame(' | ', $accounting['fields'][15]['settings']['separator']);
         self::assertCount(4, array_filter(
             $accounting['fields'],

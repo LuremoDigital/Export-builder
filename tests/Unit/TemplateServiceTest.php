@@ -127,6 +127,7 @@ final class TemplateServiceTest extends TestCase
             'filters' => [
                 'statuses' => ['live', 'deleted'],
                 'keyword' => ' annual report ',
+                'completedOnly' => '1',
                 'fieldConditions' => [
                     ['field' => 'title', 'operator' => 'contains', 'value' => 'Board'],
                     ['field' => 'body', 'operator' => 'contains', 'value' => 'bad,value'],
@@ -140,6 +141,7 @@ final class TemplateServiceTest extends TestCase
         ], null, [
             'supportsStatusFilter' => true,
             'supportsKeywordFilter' => true,
+            'supportsCompletedFilter' => true,
             'statuses' => [
                 ['value' => 'live'],
             ],
@@ -155,6 +157,7 @@ final class TemplateServiceTest extends TestCase
 
         self::assertSame(['live'], $template->filters['statuses']);
         self::assertSame('annual report', $template->filters['keyword']);
+        self::assertTrue($template->filters['completedOnly']);
         self::assertSame([
             [
                 'field' => 'title',

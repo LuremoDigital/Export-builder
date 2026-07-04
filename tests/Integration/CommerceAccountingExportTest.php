@@ -34,6 +34,22 @@ final class CommerceAccountingExportTest extends TestCase
         self::assertSame('Line Item Totals', $rows[0][18]);
     }
 
+    public function testOrderQueryExcludesCarts(): void
+    {
+        $plugin = Plugin::getInstance();
+        self::assertInstanceOf(Plugin::class, $plugin);
+        $completedQuery = $plugin->get('exports')->buildSourceQuery(new ExportTemplate([
+            'elementType' => 'orders',
+            'filters' => ['completedOnly' => true],
+        ]));
+        $allOrdersQuery = $plugin->get('exports')->buildSourceQuery(new ExportTemplate([
+            'elementType' => 'orders',
+        ]));
+
+        self::assertTrue($completedQuery->isCompleted);
+        self::assertNull($allOrdersQuery->isCompleted);
+    }
+
     public function testMarkedBlankFieldWarnsWithActualRunId(): void
     {
         $plugin = Plugin::getInstance();
