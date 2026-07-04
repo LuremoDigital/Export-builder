@@ -171,6 +171,11 @@ final class TemplateServiceTest extends TestCase
                 'targetIds' => [12, 15],
             ],
         ], $template->filters['relations']);
+
+        $malformed = $service->createTemplateFromRequest([
+            'filters' => ['completedOnly' => ['1']],
+        ], null, ['supportsCompletedFilter' => true]);
+        self::assertFalse($malformed->filters['completedOnly']);
     }
 
     public function testCreateTemplateFromRequestNormalizesXmlSettings(): void
