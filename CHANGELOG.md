@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.3.0 — 2026-07-04
+
 ### Added
 
 - Commerce accounting preset with 19 verified order columns (Pro)
