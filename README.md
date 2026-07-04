@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./icon.svg" width="120" alt="Data Export Builder icon">
+  <img src="./icon.svg" width="120" alt="Data builder icon">
 </p>
 
-<h1 align="center">Data Export Builder</h1>
+<h1 align="center">Data builder</h1>
 
 <p align="center">
   Reusable CSV, JSON, XLSX, and XML exports for Craft CMS — define an export once, run it on demand.
@@ -18,7 +18,7 @@
 
 ---
 
-**Data Export Builder** gives Craft CMS teams a reusable export workflow for reporting, migrations, operational handoffs, and Commerce data movement. Instead of rebuilding one-off export templates or custom scripts every time a client asks for data, define an export once, save it, and run it again whenever you need it. Small exports run immediately; larger exports run through the Craft queue and stay available for download from run history.
+**Data builder** gives Craft CMS teams a reusable export workflow for reporting, migrations, operational handoffs, and Commerce data movement. Instead of rebuilding one-off export templates or custom scripts every time a client asks for data, define an export once, save it, and run it again whenever you need it. Small exports run immediately; larger exports run through the Craft queue and stay available for download from run history.
 
 Built for agencies, freelancers, and in-house Craft teams that repeatedly need clean exports without turning every request into bespoke development work.
 
@@ -73,7 +73,7 @@ XML exports (Pro) produce a generic row-based document: a configurable root elem
 
 ## Installation
 
-Install from the **Plugin Store** in the Craft Control Panel (search for *Data Export Builder*), or with Composer:
+Install from the **Plugin Store** in the Craft Control Panel (search for *Data builder*), or with Composer:
 
 ```bash
 composer require luremo/craft-data-export-builder
@@ -142,7 +142,7 @@ Exports can contain personal data (user records, Commerce order and customer det
 
 ## Editions
 
-Data Export Builder declares native Craft plugin editions:
+Data builder declares native Craft plugin editions:
 
 - **Standard** — general content exports (CSV, JSON).
 - **Pro** — Commerce-focused workflows, XLSX, XML, scheduling, and delivery.
