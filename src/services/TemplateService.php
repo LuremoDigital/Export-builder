@@ -308,6 +308,9 @@ final class TemplateService extends Component
             'formId' => $this->normalizeIntegerInput($filtersPayload['formId'] ?? null),
             'dateFrom' => DateFilterHelper::normalizeDateInput($filtersPayload['dateFrom'] ?? null),
             'dateTo' => DateFilterHelper::normalizeDateInput($filtersPayload['dateTo'] ?? null),
+            'completedOnly' => !empty($fieldPayload['supportsCompletedFilter'])
+                && is_scalar($filtersPayload['completedOnly'] ?? null)
+                && filter_var($filtersPayload['completedOnly'], FILTER_VALIDATE_BOOLEAN),
             'statuses' => $advancedPlan['statuses'],
             'keyword' => $advancedPlan['keyword'],
             'fieldConditions' => array_map(static fn(array $condition): array => [

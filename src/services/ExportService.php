@@ -180,6 +180,10 @@ final class ExportService extends Component
             $query->status(null);
         }
 
+        if (!empty($template->filters['completedOnly']) && method_exists($query, 'isCompleted')) {
+            $query->isCompleted(true);
+        }
+
         if (method_exists($query, 'site')) {
             $siteUid = (string)($template->filters['siteUid'] ?? '');
             $site = $siteUid !== '' ? Craft::$app->getSites()->getSiteByUid($siteUid) : null;
@@ -367,7 +371,7 @@ final class ExportService extends Component
 
         foreach ($query->batch($this->batchSize) as $elements) {
             foreach ($elements as $element) {
-                $row = $this->buildRow($element, $fields, 'json');
+                $row = $this->buildRow($element, $fields, FieldValueHelper::MODE_XLSX);
 
                 $cells = [];
                 foreach (array_values($row) as $value) {

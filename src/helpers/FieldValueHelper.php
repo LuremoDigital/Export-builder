@@ -31,6 +31,7 @@ final class FieldValueHelper
      * keep this CSV-like flattening contract (see FieldValueHelperTest).
      */
     public const MODE_FLAT_TEXT = 'flatText';
+    public const MODE_XLSX = 'xlsx';
 
     public static function resolveFieldValue(
         mixed $context,
@@ -61,6 +62,8 @@ final class FieldValueHelper
         ?int $decimalPlaces = null
     ): mixed
     {
+        $structuredValues = $format === 'json' || $format === self::MODE_XLSX;
+
         if ($value instanceof ElementQueryInterface) {
             $value = $value->all();
         }
@@ -70,15 +73,15 @@ final class FieldValueHelper
         }
 
         if (is_bool($value)) {
-            return $format === 'json' ? $value : ($value ? 'true' : 'false');
+            return $structuredValues ? $value : ($value ? 'true' : 'false');
         }
 
         if ($value === null) {
-            return $format === 'json' ? null : '';
+            return $structuredValues ? null : '';
         }
 
         if ($value instanceof ElementInterface) {
-            return $format === 'json' ? self::normalizeElementForJson($value) : self::labelElementForCsv($value);
+            return $structuredValues ? self::normalizeElementForJson($value) : self::labelElementForCsv($value);
         }
 
         if ($value instanceof Traversable) {
@@ -91,7 +94,7 @@ final class FieldValueHelper
                 $value
             ));
 
-            if ($format === 'json') {
+            if ($structuredValues) {
                 return $normalized;
             }
 
@@ -107,7 +110,7 @@ final class FieldValueHelper
         }
 
         if ($value instanceof FormieFieldValueInterface) {
-            if ($format === 'json') {
+            if ($structuredValues) {
                 return array_filter(
                     get_object_vars($value),
                     static fn(mixed $item): bool => $item !== null && $item !== '' && $item !== []
@@ -132,14 +135,14 @@ final class FieldValueHelper
         }
 
         if (is_object($value)) {
-            if ($format === 'json') {
+            if ($structuredValues) {
                 return get_object_vars($value);
             }
 
             return method_exists($value, '__toString') ? (string)$value : json_encode(get_object_vars($value), JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
 
-        return $format === 'json' ? null : '';
+        return $structuredValues ? null : '';
     }
 
     private static function drillInto(mixed $context, string $segment): mixed

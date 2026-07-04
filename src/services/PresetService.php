@@ -10,7 +10,7 @@ use Luremo\DataExportBuilder\helpers\CapabilityHelper;
 final class PresetService extends Component
 {
     /**
-     * @return array<int, array{handle:string,label:string,description:string,fields:array<int, array{path:string,label:string,settings?:array<string,mixed>}>}>
+     * @return array<int, array{handle:string,label:string,description:string,fields:array<int, array{path:string,label:string,settings?:array<string,mixed>}>,filters?:array<string,mixed>}>
      */
     public function getPresetsForElementType(string $elementType): array
     {
@@ -40,6 +40,7 @@ final class PresetService extends Component
                     'handle' => 'commerce-accounting',
                     'label' => 'Commerce Accounting Export',
                     'description' => 'Accountant-ready order export with totals and line items in one row per order.',
+                    'filters' => ['completedOnly' => true],
                     'fields' => [
                         ['path' => 'number', 'label' => 'Order Number', 'settings' => ['warnWhenBlank' => true]],
                         ['path' => 'dateOrdered', 'label' => 'Order Date', 'settings' => ['warnWhenBlank' => true]],

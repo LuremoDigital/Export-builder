@@ -409,6 +409,7 @@
         const siteRow = document.querySelector(root.dataset.siteFilterTarget || '');
         const formRow = document.querySelector(root.dataset.formFilterTarget || '');
         const statusRow = document.querySelector(root.dataset.statusFilterTarget || '');
+        const completedRow = document.querySelector(root.dataset.completedFilterTarget || '');
         const keywordRow = document.querySelector(root.dataset.keywordFilterTarget || '');
         const fieldConditionRow = document.querySelector(root.dataset.fieldConditionFilterTarget || '');
         const relationRow = document.querySelector(root.dataset.relationFilterTarget || '');
@@ -431,6 +432,10 @@
 
         if (statusRow) {
             statusRow.classList.toggle('hidden', !payload.supportsStatusFilter);
+        }
+
+        if (completedRow) {
+            completedRow.classList.toggle('hidden', !payload.supportsCompletedFilter);
         }
 
         if (keywordRow) {
@@ -804,6 +809,10 @@
                 preset.fields.forEach(function (field) {
                     selectedFields.appendChild(createSelectedRow(field));
                 });
+                const completedOnly = document.querySelector(root.dataset.completedFilterTarget || '')?.querySelector('input[type="checkbox"]');
+                if (completedOnly) {
+                    completedOnly.checked = Boolean(preset.filters?.completedOnly);
+                }
                 renumberRows(root);
                 renderAvailableFields(root);
                 return;
