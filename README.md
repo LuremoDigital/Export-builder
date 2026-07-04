@@ -58,7 +58,7 @@ XML exports (Pro) produce a generic row-based document: a configurable root elem
 - 🧩 **Pick fields without code** — native attributes, custom fields, relation fields, and practical Matrix sub-field paths, all from one field picker.
 - 🔃 **Shape the output** — rename and reorder columns, and choose CSV, JSON, XLSX, or XML.
 - 🔍 **Filter precisely** — by section, site, form, status, keyword, relevant element date, relations, and selected field values where supported.
-- ⚡ **Start from presets** — one-click Commerce starting points include an accountant-ready order export with stable totals and flattened line items, plus Order Ops, Catalog Feed, and Inventory Feed.
+- ⚡ **Commerce accounting preset (Pro)** — export one row per completed order with 19 accountant-ready columns, two-decimal totals, and line-item values joined with ` | `. Order Ops, Catalog Feed, and Inventory Feed presets are also included.
 - ♻️ **Reuse everything** — save export templates and run them again on demand.
 - ⏱️ **Scale safely** — small exports run immediately; larger ones queue and download later from run history.
 - 🤖 **Automate (Pro)** — schedule recurring exports and deliver them by email, webhook, or to a Craft asset volume.
