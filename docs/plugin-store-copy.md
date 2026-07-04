@@ -6,7 +6,7 @@ Reusable CSV, JSON, XLSX, and XML exports for Craft CMS teams that need reportin
 
 ## Long Description
 
-Data Export Builder gives Craft CMS teams a Control Panel workflow for recurring exports.
+Data builder gives Craft CMS teams a Control Panel workflow for recurring exports.
 
 Instead of rebuilding one-off export templates for every reporting request, migration, Commerce handoff, or operational task, teams can create a reusable export template once and run it whenever needed.
 

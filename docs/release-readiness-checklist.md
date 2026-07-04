@@ -1,6 +1,6 @@
 # Release Readiness Checklist
 
-This is the Phase 1 commercial-readiness checklist for Data Export Builder. The goal is to remove trust leaks before spending effort on pricing expansion or larger go-to-market work.
+This is the Phase 1 commercial-readiness checklist for Data builder. The goal is to remove trust leaks before spending effort on pricing expansion or larger go-to-market work.
 
 ## Positioning
 

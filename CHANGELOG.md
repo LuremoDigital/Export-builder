@@ -3,67 +3,74 @@
 ## Unreleased
 
 ### Added
-- Pro-only Commerce Accounting Export preset with 19 verified Craft Commerce order columns, two-decimal money values, and line-item values joined with ` | `
-- fixture-backed Commerce integration suite for exact accounting CSV column order, cell values, empty results, field-setting persistence, and required-field warnings
+
+- Commerce accounting preset with 19 verified order columns (Pro)
+- Commerce integration tests for CSV output, empty results, settings, and warnings
 
 ### Changed
-- Commerce order date filters now use the completed order's `dateOrdered` value instead of the cart's creation date
+
+- Order date filters now use `dateOrdered`
 
 ### Fixed
-- applying a preset over existing selected columns now asks for confirmation before replacing them
 
-## 1.2.0 - 2026-07-02
+- Preset replacement now asks for confirmation when fields are already selected
+
+## 1.2.0 — 2026-07-02
 
 ### Added
-- XML export format (Pro): generic row-based XML output — one row node per exported item, one child element per selected field, with a configurable root and row element name
-- inline XML Settings under Output Format with clear, field-level name validation (invalid names are rejected, never silently rewritten), plus a hint explaining how column titles become XML tag names and how duplicate names get `_2`/`_3` suffixes
-- XML output streams to disk with flat memory, escapes values safely, strips characters that are illegal in XML 1.0, and verifies writes so a failed or interrupted run never exposes a partial file as a completed export
+
+- XML exports with configurable root and row names (Pro)
+- XML name validation and column-title previews
 
 ### Changed
-- export format metadata (label, MIME type, file extension, edition gating) now lives in a single registry, so every surface (validation, downloads, delivery, format dropdown) agrees on the supported formats
-- unknown export formats now fail with a clear error everywhere instead of silently falling back to CSV
-- webhook delivery payloads can now carry `xml` as a format value; integrators validating the format field should allow it
-- the plugin now requires the PHP `xmlwriter` extension (enabled by default in PHP)
-- run history now shows "Completed, no matching rows" instead of "0 rows" for a completed run with no results
-- polished the Save Template button styling
+
+- Centralized export format metadata and validation
+- Unknown formats now fail instead of falling back to CSV
+- Added `xml` as a webhook format
+- Added the PHP `xmlwriter` requirement
+- Empty runs now show "Completed, no matching rows"
+- Updated Save Template button styling
 
 ### Fixed
-- email delivery attachments now use the export's actual file name instead of a generated temporary name
 
-## 1.1.0 - 2026-06-29
+- Email attachments now keep the export filename
+
+## 1.1.0 — 2026-06-29
 
 ### Added
-- advanced filter builder: match custom-field values and require element relations before rows enter the export, with per-type operators (equals, contains, is not empty)
-- collapsible field-picker groups with field counts, so large field sets (custom fields, matrix paths) no longer render as one long flat list
+
+- Custom-field and relation filters
+- Collapsible field groups with counts
 
 ### Changed
-- the export editor now has a persistent sticky Save bar that stays reachable from anywhere on the page instead of a button buried in the first card
-- the Exports index leads with the templates list; the Pro upsell moved below it
-- trimmed duplicate "Pro" messaging on the editor and bumped field-group headings for clearer hierarchy
+
+- Added a sticky Save bar to the export editor
+- Moved the Pro upsell below the template list
+- Reduced duplicate Pro labels
 
 ### Fixed
-- fixed a field-picker initialisation crash (relation-filter attribute collision) that left the picker unresponsive, so no export columns could be selected on a new template
-- removed the unsupported `mimeType` asset filter that could fail an export run
-- reset field-group expansion state when the element type changes
 
-## 1.0.1 - 2026-06-29
+- Fixed field picker initialization for new templates
+- Removed the unsupported asset `mimeType` filter
+- Reset field groups when the element type changes
 
-- switched edition gating from environment variables to native Craft plugin editions
-- refreshed README, plugin store copy, and commercial license text for paid release readiness
-- improved test coverage for plugin editions and template request normalization
-- updated Composer test script to use the project-local PHPUnit binary
-- corrected package identity URLs and removed the deprecated Composer version field for Plugin Store release
-- adopted the official Craft commercial license
-- made the index/constraint migration database-agnostic so it installs on both MySQL/MariaDB and PostgreSQL
-- declared phpoffice/phpspreadsheet explicitly for the Pro XLSX feature
-- removed a stray duplicate root migrations directory
-- documented data handling and retention, expanded the manual QA checklist, and added CI for PHP 8.2 to 8.4
+## 1.0.1 — 2026-06-29
 
-## 1.0.0 - 2026-03-16
+- Switched to native Craft plugin editions
+- Prepared the Plugin Store copy and commercial license
+- Added edition and request-normalization tests
+- Used the local PHPUnit binary in Composer scripts
+- Corrected package URLs and metadata
+- Added the Craft commercial license
+- Made migrations work with MySQL, MariaDB, and PostgreSQL
+- Declared `phpoffice/phpspreadsheet` for XLSX exports
+- Removed duplicate migrations
+- Documented data retention and manual QA
+- Added CI for PHP 8.2–8.4
 
-- initial commercial-ready V1 scaffold for Data Export Builder
-- Craft CMS 5 plugin bootstrap, migrations, records, models, services, controllers, queue job, and CP UI
-- reusable export templates with CSV and JSON support
-- field discovery for native attributes, custom fields, relations, and practical Matrix paths
-- queued export runs with download history and permission gates
-- commercial README, plugin store copy draft, pricing notes, and manual QA checklist
+## 1.0.0 — 2026-03-16
+
+- First release of Data builder
+- CSV and JSON export templates
+- Native, custom, relation, and Matrix fields
+- Queued runs, download history, and permissions

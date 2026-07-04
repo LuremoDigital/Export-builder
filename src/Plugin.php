@@ -112,7 +112,7 @@ final class Plugin extends BasePlugin
             UserPermissions::EVENT_REGISTER_PERMISSIONS,
             static function (RegisterUserPermissionsEvent $event): void {
                 $event->permissions[] = [
-                    'heading' => Craft::t(self::TRANSLATION_CATEGORY, 'Data Export Builder'),
+                    'heading' => Craft::t(self::TRANSLATION_CATEGORY, 'Data builder'),
                     'permissions' => [
                         'manageDataExports' => [
                             'label' => Craft::t(self::TRANSLATION_CATEGORY, 'Manage export templates'),

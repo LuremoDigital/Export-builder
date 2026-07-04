@@ -44,7 +44,7 @@
         "test": "vendor/bin/phpunit --colors=always"
     },
     "extra": {
-        "name": "Data Export Builder",
+        "name": "Data builder",
         "handle": "data-export-builder",
         "class": "Luremo\\DataExportBuilder\\Plugin",
         "description": "Build reusable CSV, JSON, XLSX, and XML exports for Craft CMS without custom templates or one-off scripts.",
