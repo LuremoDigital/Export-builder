@@ -41,8 +41,6 @@
 
             <div class="deb-preset-list hidden" data-preset-list></div>
 
-            <p class="light deb-xml-field-hint{% if (template.format ?? '') != 'xml' %} hidden{% endif %}" data-xml-field-hint>XML tag names are generated from export column titles. For example, &ldquo;Order Number&rdquo; becomes <code>&lt;order_number&gt;</code>. Duplicate generated names use <code>_2</code>, <code>_3</code>, and so on.</p>
-
             <div class="deb-selected-list" data-selected-fields>
                 {% for field in selectedFields %}
                     <div class="deb-selected-row" data-selected-row data-field-path="{{ field.fieldPath }}" draggable="true">

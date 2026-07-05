@@ -30,10 +30,6 @@
 {# Format options come from ExportFormatHelper via TemplatesController — no
    duplicated format list in Twig. #}
 {% set formatOptions = formatOptions ?? [] %}
-{% set xmlSettings = template.settings.xml ?? {} %}
-{% set xmlRootElement = xmlSettings.rootElement ?? 'export' %}
-{% set xmlRowElement = xmlSettings.rowElement ?? 'row' %}
-{% set isXmlFormat = template.format == 'xml' %}
 
 {% block actionButton %}
     <a class="btn" href="{{ cpUrl('data-export-builder/exports') }}">Back to Exports</a>
@@ -106,39 +102,6 @@
                                 instructions: formatInstructions ?? '',
                                 errors: template.getErrors('format')
                             }) }}
-
-                            {% if isProEdition %}
-                                <div class="deb-xml-settings{% if not isXmlFormat %} hidden{% endif %}" data-xml-settings>
-                                    <div class="deb-section-heading">
-                                        <div>
-                                            <h3>XML Settings</h3>
-                                            <p>Controls the top-level XML tags. Field names come from the selected export column titles.</p>
-                                        </div>
-                                    </div>
-
-                                    <div class="deb-xml-settings__fields">
-                                        {{ forms.textField({
-                                            label: 'Root element',
-                                            id: 'xmlRootElement',
-                                            name: 'settings[xml][rootElement]',
-                                            value: xmlRootElement,
-                                            instructions: 'Wraps the whole file, for example `<export>`.',
-                                            errors: template.getErrors('settings.xml.rootElement')
-                                        }) }}
-
-                                        {{ forms.textField({
-                                            label: 'Row element',
-                                            id: 'xmlRowElement',
-                                            name: 'settings[xml][rowElement]',
-                                            value: xmlRowElement,
-                                            instructions: 'Wraps each exported item, for example `<row>`.',
-                                            errors: template.getErrors('settings.xml.rowElement')
-                                        }) }}
-                                    </div>
-
-                                    <p class="light">Use letters, numbers, underscores, hyphens, or periods. Names cannot contain spaces, start with a number, or begin with the reserved xml/xmlns prefix.</p>
-                                </div>
-                            {% endif %}
 
                             <div data-section-filter-row>
                                 {{ forms.selectField({

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Luremo\DataExportBuilder\services;
 
 use Craft;
-use InvalidArgumentException;
 use Luremo\DataExportBuilder\helpers\XmlExportHelper;
 use XMLWriter;
 use yii\base\Exception;
@@ -23,21 +22,13 @@ final class XmlExportWriter
 {
     private ?XMLWriter $writer = null;
     private bool $closed = false;
-
-    /** @var array<string, true> cell names already validated for this document */
-    private array $validatedCellNames = [];
+    /** @var array<string, string> */
+    private array $cellNames = [];
 
     public function __construct(
         private readonly string $filePath,
         private readonly string $rootElement,
-        private readonly string $rowElement,
     ) {
-        foreach (['Root' => $rootElement, 'Row' => $rowElement] as $kind => $name) {
-            $error = XmlExportHelper::validateElementName($name);
-            if ($error !== null) {
-                throw new InvalidArgumentException(sprintf('%s element name "%s" is invalid: %s', $kind, $name, $error));
-            }
-        }
     }
 
     public function open(): void
@@ -51,8 +42,6 @@ final class XmlExportWriter
             throw new Exception(sprintf('Could not open export file "%s" for writing.', $this->filePath));
         }
 
-        $writer->setIndent(true);
-        $writer->setIndentString('  ');
         $writer->startDocument('1.0', 'UTF-8');
         $writer->startElement($this->rootElement);
 
@@ -62,31 +51,19 @@ final class XmlExportWriter
     /**
      * Writes one row node with one child element per cell.
      *
-     * Cell names are expected to come from XmlExportHelper (sanitized and
-     * collision-safe), but are re-validated here — once per unique name —
-     * so a future caller can't silently produce a malformed document.
+     * Invalid field paths use Craft's native `<item>` fallback.
      *
-     * @param array<string, string> $cells element name => text value
+     * @param array<string, string> $cells field path => text value
      */
     public function writeRow(array $cells): void
     {
         $writer = $this->writer ?? throw new Exception('XML writer is not open.');
 
-        $writer->startElement($this->rowElement);
+        $writer->startElement('item');
 
         foreach ($cells as $name => $value) {
             $name = (string)$name;
-
-            if (!isset($this->validatedCellNames[$name])) {
-                $error = XmlExportHelper::validateElementName($name);
-                if ($error !== null) {
-                    throw new InvalidArgumentException(sprintf('Field element name "%s" is invalid: %s', $name, $error));
-                }
-
-                $this->validatedCellNames[$name] = true;
-            }
-
-            $writer->startElement($name);
+            $writer->startElement($this->cellNames[$name] ??= XmlExportHelper::nativeElementName($name));
             $writer->text(XmlExportHelper::cleanTextValue($value));
             $writer->endElement();
         }

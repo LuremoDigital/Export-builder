@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+- XML exports now match Craft's native XML structure
+
 ## 1.3.0 — 2026-07-04
 
 ### Added

@@ -11,7 +11,6 @@ use Luremo\DataExportBuilder\helpers\CapabilityHelper;
 use Luremo\DataExportBuilder\helpers\DateFilterHelper;
 use Luremo\DataExportBuilder\helpers\ExportFormatHelper;
 use Luremo\DataExportBuilder\helpers\FilterSpecMapper;
-use Luremo\DataExportBuilder\helpers\XmlExportHelper;
 use Luremo\DataExportBuilder\models\ExportField;
 use Luremo\DataExportBuilder\models\ExportRun;
 use Luremo\DataExportBuilder\models\ExportTemplate;
@@ -97,10 +96,6 @@ final class TemplateService extends Component
             return false;
         }
 
-        if (!$this->validateXmlSettings($template)) {
-            return false;
-        }
-
         $existing = ExportTemplateRecord::find()->where(['handle' => $template->handle])->one();
         if ($existing !== null && (int)$existing->id !== (int)$template->id) {
             $template->addError('handle', 'Handle must be unique.');
@@ -182,39 +177,6 @@ final class TemplateService extends Component
         return true;
     }
 
-    /**
-     * Validates XML root/row element names — only when the template exports
-     * XML. Stored `settings.xml` values on non-XML templates are preserved
-     * untouched and never produce validation noise. Invalid names are
-     * rejected, not silently rewritten, because they can become importer
-     * contracts.
-     */
-    public function validateXmlSettings(ExportTemplate $template): bool
-    {
-        if ($template->format !== ExportFormatHelper::FORMAT_XML) {
-            return true;
-        }
-
-        $xmlSettings = is_array($template->settings['xml'] ?? null) ? $template->settings['xml'] : [];
-        $isValid = true;
-
-        foreach (['rootElement', 'rowElement'] as $key) {
-            $value = $xmlSettings[$key] ?? '';
-            // Non-scalar input (e.g. a malformed array payload) must be
-            // rejected outright, not coerced to the literal string "Array"
-            // — a scalar-looking cast would let it silently pass validation.
-            $error = is_scalar($value)
-                ? XmlExportHelper::validateElementName((string)$value)
-                : 'Enter an XML element name.';
-            if ($error !== null) {
-                $template->addError('settings.xml.' . $key, $error);
-                $isValid = false;
-            }
-        }
-
-        return $isValid;
-    }
-
     public function deleteTemplate(int $templateId): bool
     {
         return (bool)ExportTemplateRecord::deleteAll(['id' => $templateId]);
@@ -262,7 +224,6 @@ final class TemplateService extends Component
         $template->filters = $this->normalizeFilters($filtersPayload, $fieldPayload);
         $template->settings = [
             'queueThreshold' => (int)($settingsPayload['queueThreshold'] ?? 1000),
-            'xml' => $this->normalizeXmlSettings($settingsPayload, $existingSettings),
             'schedule' => [
                 'enabled' => !empty($schedulePayload['enabled']),
                 'frequency' => $scheduleFrequency,
@@ -320,47 +281,6 @@ final class TemplateService extends Component
             ], $advancedPlan['fieldConditions']),
             'relations' => $advancedPlan['relations'],
         ];
-    }
-
-    /**
-     * Normalizes the XML settings namespace. Keys absent from the request
-     * (Standard edition UI, or older saved payloads) fall back to the
-     * template's existing values so switching formats never erases work.
-     * Present-but-empty values are kept as typed so validation can reject
-     * them explicitly instead of silently restoring an old name.
-     *
-     * @param array<string, mixed> $settingsPayload
-     * @param array<string, mixed> $existingSettings
-     * @return array{rootElement:string,rowElement:string}
-     */
-    private function normalizeXmlSettings(array $settingsPayload, array $existingSettings): array
-    {
-        $xmlPayload = is_array($settingsPayload['xml'] ?? null) ? $settingsPayload['xml'] : [];
-        $existingXml = is_array($existingSettings['xml'] ?? null) ? $existingSettings['xml'] : [];
-
-        $normalized = [];
-        foreach ([
-            'rootElement' => XmlExportHelper::DEFAULT_ROOT_ELEMENT,
-            'rowElement' => XmlExportHelper::DEFAULT_ROW_ELEMENT,
-        ] as $key => $default) {
-            $normalized[$key] = array_key_exists($key, $xmlPayload)
-                ? trim($this->scalarStringOrEmpty($xmlPayload[$key]))
-                : trim((string)($existingXml[$key] ?? $default));
-        }
-
-        return $normalized;
-    }
-
-    /**
-     * Coerces a request value to a string only when it is already scalar.
-     * A non-scalar payload (e.g. `settings[xml][rootElement][]=x`) must
-     * normalize to an empty string — which validateXmlSettings() rejects —
-     * rather than PHP's `(string)` cast of an array, which silently produces
-     * the literal, validation-passing string "Array".
-     */
-    private function scalarStringOrEmpty(mixed $value): string
-    {
-        return is_scalar($value) ? (string)$value : '';
     }
 
     public function touchLastRun(int $templateId, string $timestamp): void

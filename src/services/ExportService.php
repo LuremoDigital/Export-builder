@@ -9,6 +9,7 @@ use craft\base\Component;
 use craft\base\ElementInterface;
 use craft\elements\db\ElementQueryInterface;
 use craft\helpers\Db;
+use craft\helpers\StringHelper;
 use Luremo\DataExportBuilder\helpers\CapabilityHelper;
 use Luremo\DataExportBuilder\helpers\DateFilterHelper;
 use Luremo\DataExportBuilder\helpers\ExportFileHelper;
@@ -16,7 +17,6 @@ use Luremo\DataExportBuilder\helpers\ExportFormatHelper;
 use Luremo\DataExportBuilder\helpers\FilterApplier;
 use Luremo\DataExportBuilder\helpers\FilterSpecMapper;
 use Luremo\DataExportBuilder\helpers\FieldValueHelper;
-use Luremo\DataExportBuilder\helpers\XmlExportHelper;
 use Luremo\DataExportBuilder\jobs\RunExportJob;
 use Luremo\DataExportBuilder\models\ExportField;
 use Luremo\DataExportBuilder\models\ExportRun;
@@ -403,17 +403,12 @@ final class ExportService extends Component
         ?callable $progressCallback = null
     ): int {
         $fields = $template->getFieldsSorted();
-        $elementNames = XmlExportHelper::elementNamesForLabels(array_map(
-            static fn(ExportField $field): string => $field->columnLabel,
+        $elementNames = array_map(
+            static fn(ExportField $field): string => $field->fieldPath,
             array_values($fields)
-        ));
+        );
 
-        [$rootElement, $rowElement] = XmlExportHelper::resolveRootAndRowNames($template->settings);
-
-        // The writer validates the root/row names and deletes the partial
-        // file on abort, so a failed run never leaves a malformed document
-        // behind in export storage.
-        $writer = new XmlExportWriter($filePath, $rootElement, $rowElement);
+        $writer = new XmlExportWriter($filePath, StringHelper::toCamelCase($template->elementType));
         $writer->open();
 
         $processed = 0;

@@ -49,7 +49,7 @@ Built for agencies, freelancers, and in-house Craft teams that repeatedly need c
 | XLSX   |    —     |  ✓  |
 | XML    |    —     |  ✓  |
 
-XML exports (Pro) produce a generic row-based document: a configurable root element, one configurable row element per exported item, and one child element per selected field. Field tag names are generated from export column titles ("Order Number" becomes `<order_number>`; duplicate generated names get `_2`, `_3` suffixes). Values are flattened to readable text the same way CSV flattens them.
+XML exports (Pro) follow Craft's native XML structure: the element type is the root, each exported element is an `<item>`, and selected field paths become child tags. Values are flattened to readable text the same way CSV flattens them.
 
 ## Features
 
