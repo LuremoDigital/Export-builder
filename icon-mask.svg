@@ -2,5 +2,5 @@
   <rect x="2" y="4" width="8" height="2" rx="1" fill="currentColor"/>
   <rect x="2" y="9" width="7" height="2" rx="1" fill="currentColor"/>
   <rect x="2" y="14" width="8" height="2" rx="1" fill="currentColor"/>
-  <path fill="currentColor" d="M12.4 5.6a1.4 1.4 0 0 1 2 0l3.4 3.4a1.4 1.4 0 0 1 0 2l-3.4 3.4a1.4 1.4 0 1 1-2-2l1-1H10a1.4 1.4 0 1 1 0-2.8h3.4l-1-1a1.4 1.4 0 0 1 0-2Z"/>
+  <path fill="currentColor" d="M14.4 4a1.4 1.4 0 0 1 1.4 1.4v5.2l1-1a1.4 1.4 0 0 1 2 2l-3.4 3.4a1.4 1.4 0 0 1-2 0L10 11.6a1.4 1.4 0 0 1 2-2l1 1V5.4A1.4 1.4 0 0 1 14.4 4Z"/>
 </svg>
