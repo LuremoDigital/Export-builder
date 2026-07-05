@@ -19,7 +19,7 @@ Instead of rebuilding one-off export templates for every reporting request, migr
 - rename columns and control output order
 - apply section, site, form, and relevant element-date filters where supported
 - export to CSV or JSON in Standard
-- export to XLSX or generic row-based XML (with configurable root/row element names) in Pro
+- export to XLSX or Craft-compatible XML in Pro
 - run smaller exports immediately and queue larger exports safely
 - download completed files later from run history
 - schedule recurring exports in Pro

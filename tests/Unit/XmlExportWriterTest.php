@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Luremo\DataExportBuilder\Tests\Unit;
 
 use DOMDocument;
-use InvalidArgumentException;
-use Luremo\DataExportBuilder\helpers\XmlExportHelper;
 use Luremo\DataExportBuilder\services\XmlExportWriter;
 use PHPUnit\Framework\TestCase;
 
@@ -30,38 +28,55 @@ final class XmlExportWriterTest extends TestCase
     {
         $path = $this->tempFile();
 
-        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer = new XmlExportWriter($path, 'entries');
         $writer->open();
         $writer->close();
 
         $document = $this->parse($path);
 
-        self::assertSame('export', $document->documentElement->nodeName);
-        self::assertSame(0, $document->documentElement->getElementsByTagName('row')->length);
+        self::assertSame('entries', $document->documentElement->nodeName);
+        self::assertSame(0, $document->documentElement->getElementsByTagName('item')->length);
     }
 
     public function testSingleRowExportParses(): void
     {
         $path = $this->tempFile();
 
-        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer = new XmlExportWriter($path, 'entries');
         $writer->open();
         $writer->writeRow(['order_number' => '1001', 'customer' => 'Ada Lovelace']);
         $writer->close();
 
         $document = $this->parse($path);
-        $rows = $document->documentElement->getElementsByTagName('row');
+        $rows = $document->documentElement->getElementsByTagName('item');
 
         self::assertSame(1, $rows->length);
         self::assertSame('1001', $rows->item(0)->getElementsByTagName('order_number')->item(0)->textContent);
         self::assertSame('Ada Lovelace', $rows->item(0)->getElementsByTagName('customer')->item(0)->textContent);
     }
 
+    public function testOutputMatchesCraftNativeXmlShape(): void
+    {
+        $path = $this->tempFile();
+        $writer = new XmlExportWriter($path, 'entries');
+        $writer->open();
+        $writer->writeRow(['title' => 'A & B', 'enabled' => 'true']);
+        $writer->close();
+
+        $document = $this->parse($path);
+        $row = $document->documentElement->firstElementChild;
+
+        self::assertSame('entries', $document->documentElement->nodeName);
+        self::assertSame('item', $row->nodeName);
+        self::assertSame('A & B', $row->getElementsByTagName('title')->item(0)->textContent);
+        self::assertSame('true', $row->getElementsByTagName('enabled')->item(0)->textContent);
+    }
+
     public function testMultipleRowsKeepOrder(): void
     {
         $path = $this->tempFile();
 
-        $writer = new XmlExportWriter($path, 'orders', 'order');
+        $writer = new XmlExportWriter($path, 'orders');
         $writer->open();
         $writer->writeRow(['id' => '1']);
         $writer->writeRow(['id' => '2']);
@@ -77,11 +92,11 @@ final class XmlExportWriterTest extends TestCase
         self::assertSame(['1', '2', '3'], $ids);
     }
 
-    public function testCustomRootAndRowElementNames(): void
+    public function testCustomRootElementName(): void
     {
         $path = $this->tempFile();
 
-        $writer = new XmlExportWriter($path, 'catalog-feed', 'product.item');
+        $writer = new XmlExportWriter($path, 'catalog-feed');
         $writer->open();
         $writer->writeRow(['sku' => 'A-1']);
         $writer->close();
@@ -89,7 +104,7 @@ final class XmlExportWriterTest extends TestCase
         $document = $this->parse($path);
 
         self::assertSame('catalog-feed', $document->documentElement->nodeName);
-        self::assertSame(1, $document->getElementsByTagName('product.item')->length);
+        self::assertSame(1, $document->getElementsByTagName('item')->length);
     }
 
     public function testSpecialCharactersAreEscapedAndRoundTrip(): void
@@ -97,7 +112,7 @@ final class XmlExportWriterTest extends TestCase
         $path = $this->tempFile();
         $value = 'a & b < c > "d" \'e\' — Größe ✓';
 
-        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer = new XmlExportWriter($path, 'entries');
         $writer->open();
         $writer->writeRow(['note' => $value]);
         $writer->close();
@@ -111,7 +126,7 @@ final class XmlExportWriterTest extends TestCase
     {
         $path = $this->tempFile();
 
-        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer = new XmlExportWriter($path, 'entries');
         $writer->open();
         $writer->writeRow(['note' => "before\x00\x08\x0B\x1Fafter\tok\n"]);
         $writer->close();
@@ -121,42 +136,25 @@ final class XmlExportWriterTest extends TestCase
         self::assertSame("beforeafter\tok\n", $document->getElementsByTagName('note')->item(0)->textContent);
     }
 
-    public function testCollisionDisambiguatedFieldNamesParse(): void
+    public function testInvalidFieldNamesUseNativeItemFallback(): void
     {
         $path = $this->tempFile();
-        $names = XmlExportHelper::elementNamesForLabels(['Name', 'name', 'NAME']);
-
-        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer = new XmlExportWriter($path, 'entries');
         $writer->open();
-        $writer->writeRow(array_combine($names, ['first', 'second', 'third']));
+        $writer->writeRow(['Order Number' => '1001']);
         $writer->close();
 
         $document = $this->parse($path);
 
-        self::assertSame('first', $document->getElementsByTagName('name')->item(0)->textContent);
-        self::assertSame('second', $document->getElementsByTagName('name_2')->item(0)->textContent);
-        self::assertSame('third', $document->getElementsByTagName('name_3')->item(0)->textContent);
-    }
-
-    public function testInvalidRootElementNameIsRejected(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-
-        new XmlExportWriter($this->tempFile(), '123root', 'row');
-    }
-
-    public function testInvalidRowElementNameIsRejected(): void
-    {
-        $this->expectException(InvalidArgumentException::class);
-
-        new XmlExportWriter($this->tempFile(), 'export', 'xmlRow');
+        self::assertSame('1001', $document->documentElement->firstElementChild->firstElementChild->textContent);
+        self::assertSame('item', $document->documentElement->firstElementChild->firstElementChild->nodeName);
     }
 
     public function testAbortRemovesPartialFile(): void
     {
         $path = $this->tempFile();
 
-        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer = new XmlExportWriter($path, 'entries');
         $writer->open();
         $writer->writeRow(['id' => '1']);
 
@@ -171,7 +169,7 @@ final class XmlExportWriterTest extends TestCase
     {
         $path = $this->tempFile();
 
-        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer = new XmlExportWriter($path, 'entries');
         $writer->open();
         $writer->close();
         $writer->abort();
@@ -184,7 +182,7 @@ final class XmlExportWriterTest extends TestCase
         // Lifecycle guard: writing without open() must fail loudly instead of
         // silently dropping rows — a caller bug should never yield an export
         // that looks successful but is missing data.
-        $writer = new XmlExportWriter($this->tempFile(), 'export', 'row');
+        $writer = new XmlExportWriter($this->tempFile(), 'entries');
 
         $this->expectException(\yii\base\Exception::class);
         $this->expectExceptionMessage('XML writer is not open.');
@@ -195,7 +193,7 @@ final class XmlExportWriterTest extends TestCase
     {
         // Same guard on close(): closing an unopened writer is a caller bug,
         // not a no-op, so it must not report success.
-        $writer = new XmlExportWriter($this->tempFile(), 'export', 'row');
+        $writer = new XmlExportWriter($this->tempFile(), 'entries');
 
         $this->expectException(\yii\base\Exception::class);
         $this->expectExceptionMessage('XML writer is not open.');
@@ -210,7 +208,7 @@ final class XmlExportWriterTest extends TestCase
         $path = $this->tempFile();
         file_put_contents($path, 'stale partial content');
 
-        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer = new XmlExportWriter($path, 'entries');
         $writer->abort();
 
         self::assertFileDoesNotExist($path);
@@ -221,7 +219,7 @@ final class XmlExportWriterTest extends TestCase
         // The openUri failure branch decides whether a bad export path is a
         // loud failed run or a silent bad state — it must throw.
         $path = sys_get_temp_dir() . '/deb-missing-' . uniqid('', true) . '/out.xml';
-        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer = new XmlExportWriter($path, 'entries');
 
         $this->expectException(\yii\base\Exception::class);
         $this->expectExceptionMessage('Could not open export file');
@@ -238,7 +236,7 @@ final class XmlExportWriterTest extends TestCase
         $path = $dir . '/out.xml';
         $this->tempFiles[] = $path;
 
-        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer = new XmlExportWriter($path, 'entries');
         $writer->open();
         $writer->writeRow(['id' => '1']);
         $writer->close();
@@ -250,28 +248,11 @@ final class XmlExportWriterTest extends TestCase
         rmdir($dir);
     }
 
-    public function testWriteRowRejectsInvalidCellElementNames(): void
-    {
-        // Defense in depth: cell names normally come pre-sanitized from
-        // XmlExportHelper, but the writer re-validates so a future caller
-        // can't silently emit a malformed document.
-        $path = $this->tempFile();
-        $writer = new XmlExportWriter($path, 'export', 'row');
-        $writer->open();
-
-        try {
-            $this->expectException(InvalidArgumentException::class);
-            $writer->writeRow(['bad name!' => 'value']);
-        } finally {
-            $writer->abort();
-        }
-    }
-
     public function testPerBatchFlushKeepsDocumentValid(): void
     {
         $path = $this->tempFile();
 
-        $writer = new XmlExportWriter($path, 'export', 'row');
+        $writer = new XmlExportWriter($path, 'entries');
         $writer->open();
         $writer->writeRow(['id' => '1']);
         $writer->flush();
@@ -281,7 +262,7 @@ final class XmlExportWriterTest extends TestCase
 
         $document = $this->parse($path);
 
-        self::assertSame(2, $document->getElementsByTagName('row')->length);
+        self::assertSame(2, $document->getElementsByTagName('item')->length);
     }
 
     private function tempFile(): string
