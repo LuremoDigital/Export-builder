@@ -2,9 +2,15 @@
 
 ## Unreleased
 
+## 1.3.1 — 2026-07-05
+
 ### Changed
 
 - XML exports now match Craft's native XML structure
+
+### Removed
+
+- Custom XML root and row naming settings
 
 ## 1.3.0 — 2026-07-04
 
