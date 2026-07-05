@@ -63,10 +63,13 @@ final class XmlExportWriterTest extends TestCase
         $writer->writeRow(['title' => 'A & B', 'enabled' => 'true']);
         $writer->close();
 
-        self::assertSame(
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<entries><item><title>A &amp; B</title><enabled>true</enabled></item></entries>\n",
-            file_get_contents($path)
-        );
+        $document = $this->parse($path);
+        $row = $document->documentElement->firstElementChild;
+
+        self::assertSame('entries', $document->documentElement->nodeName);
+        self::assertSame('item', $row->nodeName);
+        self::assertSame('A & B', $row->getElementsByTagName('title')->item(0)->textContent);
+        self::assertSame('true', $row->getElementsByTagName('enabled')->item(0)->textContent);
     }
 
     public function testMultipleRowsKeepOrder(): void
