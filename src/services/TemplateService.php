@@ -206,6 +206,77 @@ final class TemplateService extends Component
         return $duplicate;
     }
 
+    public function generateUniqueHandle(string $value): string
+    {
+        $base = $this->generateHandle($value);
+        $handle = $base;
+        $index = 2;
+
+        while (ExportTemplateRecord::find()->where(['handle' => $handle])->exists()) {
+            $handle = sprintf('%s-%d', $base, $index++);
+        }
+
+        return $handle;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function exportTemplateConfig(ExportTemplate $template): array
+    {
+        $settings = $template->settings;
+        if (is_array($settings['schedule'] ?? null)) {
+            unset($settings['schedule']['lastScheduledAt']);
+        } else {
+            unset($settings['schedule']);
+        }
+        unset($settings['delivery']);
+
+        return [
+            'template' => [
+                'name' => $template->name,
+                'handle' => $template->handle,
+                'elementType' => $template->elementType,
+                'format' => $template->format,
+                'filters' => $template->filters,
+                'settings' => $settings,
+                'fields' => array_map(static fn(ExportField $field): array => [
+                    'fieldPath' => $field->fieldPath,
+                    'columnLabel' => $field->columnLabel,
+                    'sortOrder' => $field->sortOrder,
+                    'settings' => $field->settings,
+                ], $template->getFieldsSorted()),
+            ],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    public function createTemplateFromImport(array $payload, ?int $creatorId = null): ExportTemplate
+    {
+        $config = is_array($payload['template'] ?? null) ? $payload['template'] : [];
+        $settings = is_array($config['settings'] ?? null) ? $config['settings'] : [];
+        if (is_array($settings['schedule'] ?? null)) {
+            unset($settings['schedule']['lastScheduledAt']);
+        } else {
+            unset($settings['schedule']);
+        }
+
+        $template = new ExportTemplate([
+            'name' => trim((string)($config['name'] ?? '')),
+            'handle' => $this->generateHandle((string)($config['handle'] ?? $config['name'] ?? '')),
+            'elementType' => (string)($config['elementType'] ?? 'entries'),
+            'format' => (string)($config['format'] ?? 'csv'),
+            'filters' => is_array($config['filters'] ?? null) ? $config['filters'] : [],
+            'settings' => $settings,
+            'creatorId' => $creatorId,
+            'fields' => $this->hydrateFieldsFromRequest(is_array($config['fields'] ?? null) ? $config['fields'] : []),
+        ]);
+
+        return $template;
+    }
+
     public function createTemplateFromRequest(array $payload, ?ExportTemplate $template = null, array $fieldPayload = []): ExportTemplate
     {
         $template ??= new ExportTemplate();

@@ -7,6 +7,15 @@
 {% endblock %}
 
 {% block content %}
+    <div class="deb-card">
+        <form method="post" accept-charset="UTF-8" enctype="multipart/form-data" class="deb-row-actions">
+            {{ csrfInput() }}
+            {{ actionInput('data-export-builder/templates/import') }}
+            <input type="file" name="templateFile" accept="application/json,.json">
+            <button type="submit" class="btn">Import Template</button>
+        </form>
+    </div>
+
     {% if templates is empty %}
         <div class="zilch">
             <p>No export templates yet.</p>
@@ -41,6 +50,7 @@
                             <td class="nowrap rightalign">
                                 <div class="deb-row-actions">
                                 <a class="btn small deb-btn deb-btn--edit" href="{{ cpUrl('data-export-builder/exports/' ~ template.id) }}">Edit</a>
+                                <a class="btn small" href="{{ cpUrl('data-export-builder/exports/' ~ template.id ~ '/export-config') }}">Export</a>
                                 <form method="post" action="{{ cpUrl('data-export-builder/exports/' ~ template.id ~ '/run') }}" class="inline">
                                     {{ csrfInput() }}
                                     <button type="submit" class="btn small deb-btn deb-btn--run">Run</button>
