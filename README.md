@@ -60,7 +60,9 @@ XML exports (Pro) follow Craft's native XML structure: the element type is the r
 - 🔍 **Filter precisely** — by section, site, form, status, keyword, relevant element date, relations, and selected field values where supported.
 - ⚡ **Commerce accounting preset (Pro)** — export one row per completed order with 19 accountant-ready columns, two-decimal totals, and line-item values joined with ` | `. Order Ops, Catalog Feed, and Inventory Feed presets are also included.
 - ♻️ **Reuse everything** — save export templates and run them again on demand.
+- 📦 **Move templates between projects** — export a saved template to JSON and import it into another Craft project.
 - ⏱️ **Scale safely** — small exports run immediately; larger ones queue and download later from run history.
+- 🧹 **Control local retention** — auto-delete completed local export files after 7, 30, or 90 days, or keep them forever.
 - 🤖 **Automate (Pro)** — schedule recurring exports and deliver them by email, webhook, or to a Craft asset volume.
 
 ## Requirements
@@ -93,6 +95,8 @@ Then grant the plugin permissions to the right user groups.
 7. Save the template.
 8. Run the export.
 9. Download the completed file from run history.
+
+Use **Export Template JSON** to move a saved template to another project. Importing creates a new template with the same fields, filters, and portable settings, while leaving delivery secrets and local runtime state behind.
 
 ## Field Support
 
