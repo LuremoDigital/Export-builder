@@ -15,6 +15,7 @@ use JsonException;
 use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
+use yii\web\ServerErrorHttpException;
 use yii\web\UploadedFile;
 
 final class TemplatesController extends Controller
@@ -155,10 +156,14 @@ final class TemplatesController extends Controller
         }
 
         $fileName = ExportFileHelper::sanitizeFileName($template->handle ?: $template->name) . '.json';
-        $json = json_encode(
-            Plugin::$plugin->get('templates')->exportTemplateConfig($template),
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
-        );
+        try {
+            $json = json_encode(
+                Plugin::$plugin->get('templates')->exportTemplateConfig($template),
+                JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+            );
+        } catch (JsonException $exception) {
+            throw new ServerErrorHttpException('Could not encode export template config.', 0, $exception);
+        }
 
         $response = Craft::$app->getResponse();
         $response->format = Response::FORMAT_RAW;

@@ -225,7 +225,11 @@ final class TemplateService extends Component
     public function exportTemplateConfig(ExportTemplate $template): array
     {
         $settings = $template->settings;
-        unset($settings['schedule']['lastScheduledAt']);
+        if (is_array($settings['schedule'] ?? null)) {
+            unset($settings['schedule']['lastScheduledAt']);
+        } else {
+            unset($settings['schedule']);
+        }
 
         return [
             'schemaVersion' => self::CONFIG_SCHEMA_VERSION,
@@ -253,6 +257,12 @@ final class TemplateService extends Component
     public function createTemplateFromImport(array $payload, ?int $creatorId = null): ExportTemplate
     {
         $config = is_array($payload['template'] ?? null) ? $payload['template'] : $payload;
+        $settings = is_array($config['settings'] ?? null) ? $config['settings'] : [];
+        if (is_array($settings['schedule'] ?? null)) {
+            unset($settings['schedule']['lastScheduledAt']);
+        } else {
+            unset($settings['schedule']);
+        }
 
         $template = new ExportTemplate([
             'name' => trim((string)($config['name'] ?? '')),
@@ -260,12 +270,10 @@ final class TemplateService extends Component
             'elementType' => (string)($config['elementType'] ?? 'entries'),
             'format' => (string)($config['format'] ?? 'csv'),
             'filters' => is_array($config['filters'] ?? null) ? $config['filters'] : [],
-            'settings' => is_array($config['settings'] ?? null) ? $config['settings'] : [],
+            'settings' => $settings,
             'creatorId' => $creatorId,
             'fields' => $this->hydrateFieldsFromRequest(is_array($config['fields'] ?? null) ? $config['fields'] : []),
         ]);
-
-        unset($template->settings['schedule']['lastScheduledAt']);
 
         return $template;
     }

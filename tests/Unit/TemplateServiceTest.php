@@ -169,6 +169,32 @@ final class TemplateServiceTest extends TestCase
         self::assertSame('Order Number', $imported->fields[0]->columnLabel);
         self::assertSame(['separator' => ' | '], $imported->fields[1]->settings);
         self::assertArrayNotHasKey('lastScheduledAt', $imported->settings['schedule']);
+
+        $legacyConfig = $service->exportTemplateConfig(new ExportTemplate([
+            'name' => 'Legacy Schedule',
+            'handle' => 'legacy-schedule',
+            'settings' => ['schedule' => 'daily'],
+            'fields' => [
+                new ExportField([
+                    'fieldPath' => 'title',
+                    'columnLabel' => 'Title',
+                ]),
+            ],
+        ]));
+        self::assertArrayNotHasKey('schedule', $legacyConfig['template']['settings']);
+
+        $legacyImport = $service->createTemplateFromImport([
+            'name' => 'Legacy Schedule',
+            'handle' => 'legacy-schedule',
+            'settings' => ['schedule' => 'daily'],
+            'fields' => [
+                [
+                    'fieldPath' => 'title',
+                    'columnLabel' => 'Title',
+                ],
+            ],
+        ]);
+        self::assertArrayNotHasKey('schedule', $legacyImport->settings);
     }
 
     public function testCreateTemplateFromRequestNormalizesAdvancedFiltersAgainstDiscoveryPayload(): void
