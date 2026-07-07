@@ -229,6 +229,7 @@ final class TemplateService extends Component
         } else {
             unset($settings['schedule']);
         }
+        unset($settings['delivery']);
 
         return [
             'template' => [

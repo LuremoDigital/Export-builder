@@ -132,6 +132,11 @@ final class TemplateServiceTest extends TestCase
             'filters' => ['completedOnly' => true],
             'settings' => [
                 'queueThreshold' => 1000,
+                'delivery' => [
+                    'webhookUrl' => 'https://example.test/hook',
+                    'webhookSecret' => 'secret',
+                    'remoteVolumeUid' => 'volume-uid',
+                ],
                 'schedule' => [
                     'enabled' => true,
                     'frequency' => 'daily',
@@ -157,6 +162,7 @@ final class TemplateServiceTest extends TestCase
 
         self::assertArrayNotHasKey('id', $config['template']);
         self::assertSame('number', $config['template']['fields'][0]['fieldPath']);
+        self::assertArrayNotHasKey('delivery', $config['template']['settings']);
         self::assertArrayNotHasKey('lastScheduledAt', $config['template']['settings']['schedule']);
 
         $imported = $service->createTemplateFromImport($config, 5);
@@ -183,13 +189,15 @@ final class TemplateServiceTest extends TestCase
         self::assertArrayNotHasKey('schedule', $legacyConfig['template']['settings']);
 
         $legacyImport = $service->createTemplateFromImport([
-            'name' => 'Legacy Schedule',
-            'handle' => 'legacy-schedule',
-            'settings' => ['schedule' => 'daily'],
-            'fields' => [
-                [
-                    'fieldPath' => 'title',
-                    'columnLabel' => 'Title',
+            'template' => [
+                'name' => 'Legacy Schedule',
+                'handle' => 'legacy-schedule',
+                'settings' => ['schedule' => 'daily'],
+                'fields' => [
+                    [
+                        'fieldPath' => 'title',
+                        'columnLabel' => 'Title',
+                    ],
                 ],
             ],
         ]);

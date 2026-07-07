@@ -198,6 +198,12 @@ final class TemplatesController extends Controller
             return $this->redirect('data-export-builder/exports');
         }
 
+        if (!is_array($payload['template'] ?? null)) {
+            Craft::$app->getSession()->setError('Template import failed: JSON must contain a template object.');
+
+            return $this->redirect('data-export-builder/exports');
+        }
+
         $templates = Plugin::$plugin->get('templates');
         $template = $templates->createTemplateFromImport($payload, (int)Craft::$app->getUser()->getId());
         $template->handle = $templates->generateUniqueHandle($template->handle);
