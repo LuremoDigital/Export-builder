@@ -37,6 +37,8 @@
                         {% if run.status == 'completed' %}
                             {% if run.filePath %}
                                 <a class="btn small" href="{{ cpUrl('data-export-builder/exports/' ~ template.id ~ '/download/' ~ run.id) }}">Download</a>
+                            {% elseif run.storageType == 'local' %}
+                                <span class="light">File expired</span>
                             {% else %}
                                 <span class="light">Delivered remotely</span>
                             {% endif %}
