@@ -7,12 +7,15 @@ namespace Luremo\DataExportBuilder\controllers;
 use Craft;
 use craft\web\Controller;
 use Luremo\DataExportBuilder\helpers\CapabilityHelper;
+use Luremo\DataExportBuilder\helpers\ExportFileHelper;
 use Luremo\DataExportBuilder\helpers\ExportFormatHelper;
 use Luremo\DataExportBuilder\Plugin;
 use Luremo\DataExportBuilder\web\assets\cp\CpAsset;
+use JsonException;
 use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
+use yii\web\UploadedFile;
 
 final class TemplatesController extends Controller
 {
@@ -140,6 +143,71 @@ final class TemplatesController extends Controller
         Craft::$app->getSession()->setNotice('Export template duplicated.');
 
         return $this->redirect('data-export-builder/exports/' . $duplicate->id);
+    }
+
+    public function actionExportConfig(?int $templateId = null): Response
+    {
+        $templateId ??= (int)Craft::$app->getRequest()->getRequiredBodyParam('templateId');
+
+        $template = Plugin::$plugin->get('templates')->getTemplateById($templateId);
+        if ($template === null) {
+            throw new NotFoundHttpException('Export template not found.');
+        }
+
+        $fileName = ExportFileHelper::sanitizeFileName($template->handle ?: $template->name) . '.json';
+        $json = json_encode(
+            Plugin::$plugin->get('templates')->exportTemplateConfig($template),
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+        );
+
+        $response = Craft::$app->getResponse();
+        $response->format = Response::FORMAT_RAW;
+        $response->getHeaders()
+            ->set('Content-Type', 'application/json; charset=UTF-8')
+            ->set('Content-Disposition', 'attachment; filename="' . $fileName . '"');
+        $response->content = $json . "\n";
+
+        return $response;
+    }
+
+    public function actionImport(): Response
+    {
+        $this->requirePostRequest();
+
+        $file = UploadedFile::getInstanceByName('templateFile');
+        if ($file === null || $file->tempName === '' || $file->error !== UPLOAD_ERR_OK) {
+            Craft::$app->getSession()->setError('Choose a template JSON file to import.');
+
+            return $this->redirect('data-export-builder/exports');
+        }
+
+        try {
+            $payload = json_decode((string)file_get_contents($file->tempName), true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            Craft::$app->getSession()->setError('Template import failed: invalid JSON.');
+
+            return $this->redirect('data-export-builder/exports');
+        }
+
+        if (!is_array($payload)) {
+            Craft::$app->getSession()->setError('Template import failed: JSON must contain an object.');
+
+            return $this->redirect('data-export-builder/exports');
+        }
+
+        $templates = Plugin::$plugin->get('templates');
+        $template = $templates->createTemplateFromImport($payload, (int)Craft::$app->getUser()->getId());
+        $template->handle = $templates->generateUniqueHandle($template->handle);
+
+        if (!$templates->saveTemplate($template)) {
+            Craft::$app->getSession()->setError('Template import failed: ' . implode(' ', $template->getFirstErrors()));
+
+            return $this->redirect('data-export-builder/exports');
+        }
+
+        Craft::$app->getSession()->setNotice('Export template imported.');
+
+        return $this->redirect('data-export-builder/exports/' . $template->id);
     }
 
     public function actionDelete(?int $templateId = null): Response

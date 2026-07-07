@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Luremo\DataExportBuilder\Tests\Unit;
 
+use Luremo\DataExportBuilder\models\ExportField;
 use Luremo\DataExportBuilder\models\ExportTemplate;
 use Luremo\DataExportBuilder\services\TemplateService;
 use PHPUnit\Framework\TestCase;
@@ -116,6 +117,58 @@ final class TemplateServiceTest extends TestCase
             'decimalPlaces' => 2,
         ], $template->fields[0]->settings);
         self::assertSame([], $template->fields[1]->settings);
+    }
+
+    public function testTemplateConfigExportAndImportRoundTripPortableSettings(): void
+    {
+        $service = new TemplateService();
+        $config = $service->exportTemplateConfig(new ExportTemplate([
+            'id' => 12,
+            'uid' => 'saved-template-uid',
+            'name' => 'Orders Accounting',
+            'handle' => 'orders-accounting',
+            'elementType' => 'orders',
+            'format' => 'csv',
+            'filters' => ['completedOnly' => true],
+            'settings' => [
+                'queueThreshold' => 1000,
+                'schedule' => [
+                    'enabled' => true,
+                    'frequency' => 'daily',
+                    'lastScheduledAt' => '2026-07-01 10:00:00',
+                ],
+            ],
+            'fields' => [
+                new ExportField([
+                    'id' => 9,
+                    'fieldPath' => 'lineItems.sku',
+                    'columnLabel' => 'Line Item SKUs',
+                    'sortOrder' => 2,
+                    'settings' => ['separator' => ' | '],
+                ]),
+                new ExportField([
+                    'id' => 8,
+                    'fieldPath' => 'number',
+                    'columnLabel' => 'Order Number',
+                    'sortOrder' => 1,
+                ]),
+            ],
+        ]));
+
+        self::assertSame(1, $config['schemaVersion']);
+        self::assertArrayNotHasKey('id', $config['template']);
+        self::assertSame('number', $config['template']['fields'][0]['fieldPath']);
+        self::assertArrayNotHasKey('lastScheduledAt', $config['template']['settings']['schedule']);
+
+        $imported = $service->createTemplateFromImport($config, 5);
+
+        self::assertNull($imported->id);
+        self::assertSame(5, $imported->creatorId);
+        self::assertSame('orders-accounting', $imported->handle);
+        self::assertTrue($imported->filters['completedOnly']);
+        self::assertSame('Order Number', $imported->fields[0]->columnLabel);
+        self::assertSame(['separator' => ' | '], $imported->fields[1]->settings);
+        self::assertArrayNotHasKey('lastScheduledAt', $imported->settings['schedule']);
     }
 
     public function testCreateTemplateFromRequestNormalizesAdvancedFiltersAgainstDiscoveryPayload(): void

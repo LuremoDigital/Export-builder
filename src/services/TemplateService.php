@@ -21,6 +21,7 @@ use yii\base\Exception;
 
 final class TemplateService extends Component
 {
+    private const CONFIG_SCHEMA_VERSION = 1;
     private const STANDARD_QUEUE_THRESHOLD = 1000;
 
     /**
@@ -203,6 +204,70 @@ final class TemplateService extends Component
         $this->saveTemplate($duplicate);
 
         return $duplicate;
+    }
+
+    public function generateUniqueHandle(string $value): string
+    {
+        $base = $this->generateHandle($value);
+        $handle = $base;
+        $index = 2;
+
+        while (ExportTemplateRecord::find()->where(['handle' => $handle])->exists()) {
+            $handle = sprintf('%s-%d', $base, $index++);
+        }
+
+        return $handle;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function exportTemplateConfig(ExportTemplate $template): array
+    {
+        $settings = $template->settings;
+        unset($settings['schedule']['lastScheduledAt']);
+
+        return [
+            'schemaVersion' => self::CONFIG_SCHEMA_VERSION,
+            'plugin' => 'luremo/craft-data-export-builder',
+            'template' => [
+                'name' => $template->name,
+                'handle' => $template->handle,
+                'elementType' => $template->elementType,
+                'format' => $template->format,
+                'filters' => $template->filters,
+                'settings' => $settings,
+                'fields' => array_map(static fn(ExportField $field): array => [
+                    'fieldPath' => $field->fieldPath,
+                    'columnLabel' => $field->columnLabel,
+                    'sortOrder' => $field->sortOrder,
+                    'settings' => $field->settings,
+                ], $template->getFieldsSorted()),
+            ],
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    public function createTemplateFromImport(array $payload, ?int $creatorId = null): ExportTemplate
+    {
+        $config = is_array($payload['template'] ?? null) ? $payload['template'] : $payload;
+
+        $template = new ExportTemplate([
+            'name' => trim((string)($config['name'] ?? '')),
+            'handle' => $this->generateHandle((string)($config['handle'] ?? $config['name'] ?? '')),
+            'elementType' => (string)($config['elementType'] ?? 'entries'),
+            'format' => (string)($config['format'] ?? 'csv'),
+            'filters' => is_array($config['filters'] ?? null) ? $config['filters'] : [],
+            'settings' => is_array($config['settings'] ?? null) ? $config['settings'] : [],
+            'creatorId' => $creatorId,
+            'fields' => $this->hydrateFieldsFromRequest(is_array($config['fields'] ?? null) ? $config['fields'] : []),
+        ]);
+
+        unset($template->settings['schedule']['lastScheduledAt']);
+
+        return $template;
     }
 
     public function createTemplateFromRequest(array $payload, ?ExportTemplate $template = null, array $fieldPayload = []): ExportTemplate
