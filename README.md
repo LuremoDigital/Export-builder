@@ -134,11 +134,12 @@ Configure automation per export template under **Settings**:
 
 Exports can contain personal data (user records, Commerce order and customer details). Handle the output accordingly:
 
-- Completed export files are written to Craft's storage and remain on disk until you delete the run from run history. They are not auto-expired.
+- Completed export files are written to Craft's storage. Per-template retention can auto-delete local files after 7, 30, or 90 days, or keep them forever.
+- Expired local export files are cleaned by `php craft data-export-builder/scheduler/run`.
 - Download access is gated by the `downloadDataExports` permission.
 - Pro webhook delivery posts the export payload to your configured endpoint; the endpoint URL and any secret you set are stored in the template config. Use HTTPS endpoints and rotate secrets if exposed.
 - Pro email delivery sends the exported file as an attachment to the addresses you configure.
-- For sites with data-retention obligations, periodically prune old runs (and any remote copies) so exported personal data is not retained longer than needed.
+- Remote copies are not deleted by local retention cleanup; prune those where they are stored.
 
 ## Editions
 

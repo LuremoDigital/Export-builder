@@ -82,6 +82,11 @@
 - Run `php craft data-export-builder/scheduler/run` and confirm a normal export run is created when due.
 - Confirm no run is created before the schedule is due.
 
+## Retention Cleanup
+
+- Set export file retention to 7 days, age a completed run beyond 7 days, run `php craft data-export-builder/scheduler/run`, and confirm the local file is deleted and no longer downloadable.
+- Set export file retention to never and confirm cleanup leaves completed files in place.
+
 ## Delivery (Pro)
 
 - Email: configure email delivery, run an export, and confirm the file arrives as an attachment.

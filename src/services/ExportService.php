@@ -14,6 +14,7 @@ use Luremo\DataExportBuilder\helpers\CapabilityHelper;
 use Luremo\DataExportBuilder\helpers\DateFilterHelper;
 use Luremo\DataExportBuilder\helpers\ExportFileHelper;
 use Luremo\DataExportBuilder\helpers\ExportFormatHelper;
+use Luremo\DataExportBuilder\helpers\ExportRetentionHelper;
 use Luremo\DataExportBuilder\helpers\FilterApplier;
 use Luremo\DataExportBuilder\helpers\FilterSpecMapper;
 use Luremo\DataExportBuilder\helpers\FieldValueHelper;
@@ -23,6 +24,7 @@ use Luremo\DataExportBuilder\models\ExportRun;
 use Luremo\DataExportBuilder\models\ExportTemplate;
 use Luremo\DataExportBuilder\Plugin;
 use Luremo\DataExportBuilder\records\ExportRunRecord;
+use Luremo\DataExportBuilder\records\ExportTemplateRecord;
 use OpenSpout\Common\Entity\Row as SpoutRow;
 use OpenSpout\Writer\XLSX\Writer as XlsxWriter;
 use verbb\formie\elements\Form as FormieForm;
@@ -154,6 +156,48 @@ final class ExportService extends Component
         $threshold = (int)($template->settings['queueThreshold'] ?? $this->defaultQueueThreshold);
 
         return $count > $threshold;
+    }
+
+    public function cleanupExpiredFiles(?\DateTimeImmutable $now = null): int
+    {
+        $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));
+        $retentionDaysByTemplate = [];
+        $cleaned = 0;
+
+        foreach (ExportRunRecord::find()
+            ->where(['status' => ExportRun::STATUS_COMPLETED])
+            ->andWhere(['not', ['filePath' => null]])
+            ->each(100) as $run
+        ) {
+            $templateId = (int)$run->templateId;
+            if (!array_key_exists($templateId, $retentionDaysByTemplate)) {
+                $template = ExportTemplateRecord::findOne($templateId);
+                $settings = is_array($template?->settingsJson) ? $template->settingsJson : [];
+                $retentionDaysByTemplate[$templateId] = ExportRetentionHelper::normalizeDays($settings['retentionDays'] ?? null);
+            }
+
+            $retentionDays = $retentionDaysByTemplate[$templateId];
+
+            if ($retentionDays === null || !ExportRetentionHelper::isExpired($run->finishedAt, $retentionDays, $now)) {
+                continue;
+            }
+
+            $filePath = (string)$run->filePath;
+            if (is_file($filePath)) {
+                if (!ExportFileHelper::isInsideExportPath($filePath)) {
+                    Craft::warning(sprintf('Cleared expired export file outside export storage "%s".', $filePath), 'data-export-builder');
+                } elseif (!@unlink($filePath)) {
+                    Craft::warning(sprintf('Could not delete expired export file "%s".', $filePath), 'data-export-builder');
+                    continue;
+                }
+            }
+
+            $run->filePath = null;
+            $run->save(false);
+            $cleaned++;
+        }
+
+        return $cleaned;
     }
 
     public function buildSourceQuery(ExportTemplate $template): mixed

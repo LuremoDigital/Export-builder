@@ -5,6 +5,7 @@
 {% set title = isNew ? 'New Export Template' : template.name %}
 {% set selectedFields = template.getFieldsSorted() %}
 {% set queueThreshold = template.settings.queueThreshold ?? 1000 %}
+{% set retentionDays = template.settings.retentionDays ?? '' %}
 {% set sectionUid = template.filters.sectionUid ?? '' %}
 {% set siteUid = template.filters.siteUid ?? '' %}
 {% set formId = template.filters.formId ?? '' %}
@@ -212,6 +213,20 @@
                                 instructions: isProEdition ? 'Exports above this row count are pushed to the Craft queue.' : 'Standard uses a fixed queue threshold of 1000 rows. Upgrade to Pro for custom queue thresholds.',
                                 disabled: not isProEdition,
                                 errors: template.getErrors('settings')
+                            }) }}
+
+                            {{ forms.selectField({
+                                label: 'Export File Retention',
+                                id: 'retentionDays',
+                                name: 'settings[retentionDays]',
+                                options: [
+                                    { label: 'Never auto-delete', value: '' },
+                                    { label: '7 days', value: '7' },
+                                    { label: '30 days', value: '30' },
+                                    { label: '90 days', value: '90' }
+                                ],
+                                value: retentionDays,
+                                instructions: 'Completed local files are cleaned by the scheduler command.'
                             }) }}
                         </div>
                     </div>

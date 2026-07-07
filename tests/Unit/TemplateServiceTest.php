@@ -30,6 +30,7 @@ final class TemplateServiceTest extends TestCase
             ],
             'settings' => [
                 'queueThreshold' => '250',
+                'retentionDays' => '30',
             ],
             'fields' => [
                 [
@@ -52,6 +53,7 @@ final class TemplateServiceTest extends TestCase
         self::assertSame('2026-03-20', $template->filters['dateFrom']);
         self::assertSame('2026-03-24', $template->filters['dateTo']);
         self::assertSame(250, $template->settings['queueThreshold']);
+        self::assertSame(30, $template->settings['retentionDays']);
         self::assertSame('Author Email', $template->fields[0]->columnLabel);
         self::assertSame('title', $template->fields[1]->fieldPath);
         self::assertSame('title', $template->fields[1]->columnLabel);
@@ -68,6 +70,9 @@ final class TemplateServiceTest extends TestCase
                 'formId' => 'not-a-number',
                 'dateFrom' => 'not-a-date',
             ],
+            'settings' => [
+                'retentionDays' => '14',
+            ],
             'fields' => [
                 [
                     'fieldPath' => '',
@@ -82,6 +87,7 @@ final class TemplateServiceTest extends TestCase
         self::assertSame('basic-export', $template->handle);
         self::assertNull($template->filters['formId']);
         self::assertNull($template->filters['dateFrom']);
+        self::assertNull($template->settings['retentionDays']);
         self::assertCount(1, $template->fields);
         self::assertSame('slug', $template->fields[0]->columnLabel);
     }

@@ -10,6 +10,7 @@ use DateTimeInterface;
 use Luremo\DataExportBuilder\helpers\CapabilityHelper;
 use Luremo\DataExportBuilder\helpers\DateFilterHelper;
 use Luremo\DataExportBuilder\helpers\ExportFormatHelper;
+use Luremo\DataExportBuilder\helpers\ExportRetentionHelper;
 use Luremo\DataExportBuilder\helpers\FilterSpecMapper;
 use Luremo\DataExportBuilder\models\ExportField;
 use Luremo\DataExportBuilder\models\ExportRun;
@@ -224,6 +225,7 @@ final class TemplateService extends Component
         $template->filters = $this->normalizeFilters($filtersPayload, $fieldPayload);
         $template->settings = [
             'queueThreshold' => (int)($settingsPayload['queueThreshold'] ?? 1000),
+            'retentionDays' => ExportRetentionHelper::normalizeDays($settingsPayload['retentionDays'] ?? null),
             'schedule' => [
                 'enabled' => !empty($schedulePayload['enabled']),
                 'frequency' => $scheduleFrequency,

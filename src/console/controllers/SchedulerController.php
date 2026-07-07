@@ -14,6 +14,7 @@ final class SchedulerController extends Controller
     {
         $count = Plugin::$plugin->get('schedules')->enqueueDueScheduledTemplates();
         $this->stdout(sprintf("Queued %d scheduled export(s).\n", $count));
+        $this->stdout(sprintf("Cleaned %d expired export file(s).\n", Plugin::$plugin->get('exports')->cleanupExpiredFiles()));
 
         return ExitCode::OK;
     }
