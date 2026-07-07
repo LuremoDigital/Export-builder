@@ -32,6 +32,10 @@ final class PresetServiceTest extends TestCase
             'Tax Total',
             'Grand Total',
             'Currency',
+            'Refund Amounts',
+            'Refund Dates',
+            'Refund References',
+            'Refund Currency',
             'Total Quantity',
             'Line Item SKUs',
             'Line Item Titles',
@@ -41,8 +45,10 @@ final class PresetServiceTest extends TestCase
 
         self::assertSame('dateOrdered', $accounting['fields'][1]['path']);
         self::assertSame('paidStatus', $accounting['fields'][7]['path']);
+        self::assertSame('transactions.refund.success.paymentAmount', $accounting['fields'][14]['path']);
         self::assertTrue($accounting['filters']['completedOnly']);
-        self::assertSame(' | ', $accounting['fields'][15]['settings']['separator']);
+        self::assertSame(' | ', $accounting['fields'][14]['settings']['separator']);
+        self::assertSame(' | ', $accounting['fields'][19]['settings']['separator']);
         self::assertCount(4, array_filter(
             $accounting['fields'],
             static fn(array $field): bool => ($field['settings']['warnWhenBlank'] ?? false) === true

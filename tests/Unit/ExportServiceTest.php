@@ -56,6 +56,41 @@ final class ExportServiceTest extends TestCase
         self::assertMatchesRegularExpression('/^ordersfeed-\d{8}-\d{6}-7\.xml$/', $fileName);
     }
 
+    public function testCommerceNativeEagerLoadMethodsAreUsedBeforeGenericWith(): void
+    {
+        $query = new class () {
+            /** @var string[] */
+            public array $calls = [];
+
+            /**
+             * @param string[] $paths
+             */
+            public function with(array $paths): void
+            {
+                $this->calls[] = 'with:' . implode(',', $paths);
+            }
+
+            public function withLineItems(bool $value): void
+            {
+                $this->calls[] = 'withLineItems:' . ($value ? 'true' : 'false');
+            }
+
+            public function withTransactions(bool $value): void
+            {
+                $this->calls[] = 'withTransactions:' . ($value ? 'true' : 'false');
+            }
+        };
+
+        $method = new \ReflectionMethod(ExportService::class, 'applyEagerLoadPaths');
+        $method->invoke(new ExportService(), $query, ['lineItems', 'transactions', 'customer']);
+
+        self::assertSame([
+            'withLineItems:true',
+            'withTransactions:true',
+            'with:customer',
+        ], $query->calls);
+    }
+
     public function testUnknownFormatMimeTypeFailsClosed(): void
     {
         // No CSV fallback: an unknown format must throw instead of quietly

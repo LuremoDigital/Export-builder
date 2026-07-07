@@ -19,12 +19,13 @@ final class FieldDiscoveryServiceTest extends TestCase
             'relatedArticles.title',
             'relatedArticles.slug',
             'matrixField.copy.heading',
+            'transactions.refund.success.paymentAmount',
             'section.handle',
             'site.handle',
         ]);
 
         self::assertSame(
-            ['author', 'customer', 'relatedArticles', 'matrixField'],
+            ['author', 'customer', 'relatedArticles', 'matrixField', 'transactions'],
             $paths
         );
     }

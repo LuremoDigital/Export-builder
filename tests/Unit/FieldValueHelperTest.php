@@ -111,6 +111,31 @@ final class FieldValueHelperTest extends TestCase
         );
     }
 
+    public function testResolveFieldValueCanFilterArraysByObjectType(): void
+    {
+        $order = (object)[
+            'transactions' => [
+                (object)['type' => 'purchase', 'status' => 'success', 'paymentAmount' => 47.19, 'reference' => 'pay_123'],
+                (object)['type' => 'refund', 'status' => 'success', 'paymentAmount' => 12.50, 'reference' => 'ref_456', 'dateCreated' => new DateTimeImmutable('2026-07-01 10:00:00')],
+                (object)['type' => 'refund', 'status' => 'failed', 'paymentAmount' => 99.00, 'reference' => 'ref_failed', 'dateCreated' => new DateTimeImmutable('2026-07-02 10:00:00')],
+                (object)['type' => 'refund', 'status' => 'success', 'paymentAmount' => 5.00, 'reference' => 'ref_789', 'dateCreated' => new DateTimeImmutable('2026-07-03 10:00:00')],
+            ],
+        ];
+
+        self::assertSame(
+            '12.50 | 5.00',
+            FieldValueHelper::resolveFieldValue($order, 'transactions.refund.success.paymentAmount', 'csv', ' | ', 2)
+        );
+        self::assertSame(
+            'ref_456 | ref_789',
+            FieldValueHelper::resolveFieldValue($order, 'transactions.refund.success.reference', 'csv', ' | ')
+        );
+        self::assertSame(
+            '2026-07-01 10:00:00 | 2026-07-03 10:00:00',
+            FieldValueHelper::resolveFieldValue($order, 'transactions.refund.success.dateCreated', 'csv', ' | ')
+        );
+    }
+
     public function testResolveFieldValueFormatsAccountingDecimalsWithoutChangingJson(): void
     {
         self::assertSame('0.00', FieldValueHelper::normalizeResolvedValue(0.0, 'csv', ', ', 2));
