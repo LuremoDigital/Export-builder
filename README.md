@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="./icon.svg" width="120" alt="Data builder icon">
+  <img src="./icon.svg" width="120" alt="Export Builder icon">
 </p>
 
-<h1 align="center">Data builder</h1>
+<h1 align="center">Export Builder</h1>
 
 <p align="center">
-  Reusable CSV, JSON, XLSX, and XML exports for Craft CMS — define an export once, run it on demand.
+  Saved export templates for Craft CMS — pick fields, filter precisely, schedule runs, and deliver automatically. Accounting-ready Commerce exports in Pro.
 </p>
 
 <p align="center">
@@ -18,7 +18,7 @@
 
 ---
 
-**Data builder** gives Craft CMS teams a reusable export workflow for reporting, migrations, operational handoffs, and Commerce data movement. Instead of rebuilding one-off export templates or custom scripts every time a client asks for data, define an export once, save it, and run it again whenever you need it. Small exports run immediately; larger exports run through the Craft queue and stay available for download from run history.
+**Export Builder** turns exports from one-off requests into saved templates your whole team can run from the Control Panel. Craft's native element index export is fine for a quick one-time dump — Export Builder is for the exports you run more than once: month-end order reports for the bookkeeper, content audits, migration extracts, recurring feeds. Save the field selection, column names, and filters once, then run it on demand, schedule it, or let it deliver itself by email or webhook. Small exports run immediately; larger exports run through the Craft queue and stay available for download from run history.
 
 Built for agencies, freelancers, and in-house Craft teams that repeatedly need clean exports without turning every request into bespoke development work.
 
@@ -75,7 +75,7 @@ XML exports (Pro) follow Craft's native XML structure: the element type is the r
 
 ## Installation
 
-Install from the **Plugin Store** in the Craft Control Panel (search for *Data builder*), or with Composer:
+Install from the **Plugin Store** in the Craft Control Panel (search for *Export Builder*), or with Composer:
 
 ```bash
 composer require luremo/craft-data-export-builder
@@ -147,7 +147,7 @@ Exports can contain personal data (user records, Commerce order and customer det
 
 ## Editions
 
-Data builder declares native Craft plugin editions:
+Export Builder declares native Craft plugin editions:
 
 - **Standard** — general content exports (CSV, JSON).
 - **Pro** — Commerce-focused workflows, XLSX, XML, scheduling, and delivery.
@@ -161,7 +161,7 @@ Set the edition through Craft plugin editions, not environment variables. Craft 
 
 ## Support
 
-- **Bug reports:** [GitHub Issues](https://github.com/LuremoDigital/Data-export-builder/issues) (please include reproduction steps).
+- **Bug reports:** [GitHub Issues](https://github.com/LuremoDigital/Export-builder/issues) (please include reproduction steps).
 - **Commercial support:** contact Luremo through the [Craft Plugin Store listing](https://plugins.craftcms.com/data-export-builder).
 - **Changelog:** [CHANGELOG.md](CHANGELOG.md)
 

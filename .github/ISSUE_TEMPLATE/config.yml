@@ -4,5 +4,5 @@ contact_links:
     url: https://plugins.craftcms.com/data-export-builder
     about: For licensing questions and paid support, contact Luremo through the Craft Plugin Store listing.
   - name: Security vulnerability
-    url: https://github.com/LuremoDigital/Data-export-builder/security/advisories/new
+    url: https://github.com/LuremoDigital/Export-builder/security/advisories/new
     about: Please report security issues privately, not as a public issue.

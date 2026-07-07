@@ -1,5 +1,5 @@
 name: Feature request
-description: Suggest an idea or improvement for Data Export Builder
+description: Suggest an idea or improvement for Export Builder
 title: "[Feature]: "
 labels: ["enhancement"]
 body:
@@ -12,7 +12,7 @@ body:
     attributes:
       label: Before you start
       options:
-        - label: I searched [existing issues](https://github.com/LuremoDigital/Data-export-builder/issues?q=is%3Aissue) and this has not already been requested.
+        - label: I searched [existing issues](https://github.com/LuremoDigital/Export-builder/issues?q=is%3Aissue) and this has not already been requested.
           required: true
   - type: textarea
     id: problem

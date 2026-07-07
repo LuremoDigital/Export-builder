@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Changed
+
+- Plugin display name unified to "Export Builder" across the control panel, queue jobs, and documentation
+- Repository links updated to the renamed GitHub repository
+
 ## 1.4.2 — 2026-07-07
 
 ### Added

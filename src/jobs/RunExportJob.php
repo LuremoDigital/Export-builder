@@ -24,6 +24,6 @@ final class RunExportJob extends BaseJob
 
     protected function defaultDescription(): ?string
     {
-        return 'Running Data builder export';
+        return 'Running Export Builder export';
     }
 }
