@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 1.4.0 — 2026-07-07
+
+### Added
+
+- Template configuration import and export for moving saved templates between projects
+- Export file retention cleanup for completed local export files
+
+### Fixed
+
+- Export direction icon alignment
+
 ## 1.3.1 — 2026-07-05
 
 ### Changed
