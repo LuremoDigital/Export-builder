@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 1.4.1 — 2026-07-07
+
+### Added
+
+- Saved export templates can now run from Craft's native element index Export button
+
 ## 1.4.0 — 2026-07-07
 
 ### Added
