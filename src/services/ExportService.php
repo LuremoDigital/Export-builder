@@ -158,6 +158,33 @@ final class ExportService extends Component
         return $count > $threshold;
     }
 
+    /**
+     * @return \Generator<int, array<string, mixed>>
+     */
+    public function exportElementQuery(
+        ElementQueryInterface $query,
+        ExportTemplate $template,
+        string $valueMode = FieldValueHelper::MODE_FLAT_TEXT
+    ): \Generator
+    {
+        $this->assertEditionRuntimeAccess($template);
+
+        $fields = $template->getFieldsSorted();
+        $eagerLoadPaths = Plugin::$plugin->get('fieldDiscovery')->getEagerLoadPaths(
+            array_map(static fn(ExportField $field): string => $field->fieldPath, $fields)
+        );
+
+        if ($eagerLoadPaths !== []) {
+            $query->with($eagerLoadPaths);
+        }
+
+        foreach ($query->batch($this->batchSize) as $elements) {
+            foreach ($elements as $element) {
+                yield $this->buildAssocRow($element, $fields, $valueMode);
+            }
+        }
+    }
+
     public function cleanupExpiredFiles(?\DateTimeImmutable $now = null): int
     {
         $now ??= new \DateTimeImmutable('now', new \DateTimeZone('UTC'));

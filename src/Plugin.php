@@ -5,11 +5,15 @@ declare(strict_types=1);
 namespace Luremo\DataExportBuilder;
 
 use Craft;
+use craft\base\Element;
 use craft\base\Plugin as BasePlugin;
+use craft\events\RegisterElementExportersEvent;
 use craft\events\RegisterTemplateRootsEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\services\UserPermissions;
+use Luremo\DataExportBuilder\elements\exporters\SavedTemplateExporter;
+use Luremo\DataExportBuilder\helpers\CapabilityHelper;
 use Luremo\DataExportBuilder\services\DownloadService;
 use Luremo\DataExportBuilder\services\DeliveryService;
 use Luremo\DataExportBuilder\services\ExportService;
@@ -51,6 +55,7 @@ final class Plugin extends BasePlugin
         $this->registerTemplateRoots();
         $this->registerCpRoutes();
         $this->registerPermissions();
+        $this->registerElementExporters();
     }
 
     public static function editions(): array
@@ -128,5 +133,29 @@ final class Plugin extends BasePlugin
                 ];
             }
         );
+    }
+
+    private function registerElementExporters(): void
+    {
+        foreach (CapabilityHelper::supportedElementTypes() as $handle => $type) {
+            $elementClass = $type['class'] ?? null;
+            if (!is_string($elementClass) || !is_subclass_of($elementClass, Element::class)) {
+                continue;
+            }
+
+            Event::on(
+                $elementClass,
+                Element::EVENT_REGISTER_EXPORTERS,
+                function (RegisterElementExportersEvent $event) use ($handle): void {
+                    if (!$this->isInstalled || !Craft::$app->getUser()->checkPermission('runDataExports')) {
+                        return;
+                    }
+
+                    foreach ($this->get('templates')->getTemplatesForElementType($handle) as $template) {
+                        $event->exporters[] = SavedTemplateExporter::classForTemplate($template);
+                    }
+                }
+            );
+        }
     }
 }

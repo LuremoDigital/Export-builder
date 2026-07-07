@@ -44,6 +44,19 @@ final class TemplateService extends Component
     }
 
     /**
+     * @return ExportTemplate[]
+     */
+    public function getTemplatesForElementType(string $elementType): array
+    {
+        $records = ExportTemplateRecord::find()
+            ->where(['elementType' => $elementType])
+            ->orderBy(['name' => SORT_ASC])
+            ->all();
+
+        return array_map(fn(ExportTemplateRecord $record): ExportTemplate => $this->buildTemplateModel($record, includeFields: false), $records);
+    }
+
+    /**
      * @return ExportRun[]
      */
     public function getRunsForTemplate(int $templateId, int $limit = 20): array
