@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.4.2 — 2026-07-07
+
 ### Added
 
 - Refund amount, date, reference, and currency columns in the Commerce accounting export preset
