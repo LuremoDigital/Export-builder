@@ -21,7 +21,6 @@ use yii\base\Exception;
 
 final class TemplateService extends Component
 {
-    private const CONFIG_SCHEMA_VERSION = 1;
     private const STANDARD_QUEUE_THRESHOLD = 1000;
 
     /**
@@ -232,8 +231,6 @@ final class TemplateService extends Component
         }
 
         return [
-            'schemaVersion' => self::CONFIG_SCHEMA_VERSION,
-            'plugin' => 'luremo/craft-data-export-builder',
             'template' => [
                 'name' => $template->name,
                 'handle' => $template->handle,
@@ -256,7 +253,7 @@ final class TemplateService extends Component
      */
     public function createTemplateFromImport(array $payload, ?int $creatorId = null): ExportTemplate
     {
-        $config = is_array($payload['template'] ?? null) ? $payload['template'] : $payload;
+        $config = is_array($payload['template'] ?? null) ? $payload['template'] : [];
         $settings = is_array($config['settings'] ?? null) ? $config['settings'] : [];
         if (is_array($settings['schedule'] ?? null)) {
             unset($settings['schedule']['lastScheduledAt']);

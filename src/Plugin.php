@@ -101,7 +101,6 @@ final class Plugin extends BasePlugin
                 $event->rules['data-export-builder/exports/fields'] = 'data-export-builder/export/fields';
                 $event->rules['data-export-builder/exports/<templateId:\d+>/duplicate'] = 'data-export-builder/templates/duplicate';
                 $event->rules['data-export-builder/exports/<templateId:\d+>/export-config'] = 'data-export-builder/templates/export-config';
-                $event->rules['data-export-builder/exports/import'] = 'data-export-builder/templates/import';
                 $event->rules['data-export-builder/exports/<templateId:\d+>/delete'] = 'data-export-builder/templates/delete';
             }
         );

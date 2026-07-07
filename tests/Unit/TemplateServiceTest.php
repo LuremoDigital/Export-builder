@@ -155,7 +155,6 @@ final class TemplateServiceTest extends TestCase
             ],
         ]));
 
-        self::assertSame(1, $config['schemaVersion']);
         self::assertArrayNotHasKey('id', $config['template']);
         self::assertSame('number', $config['template']['fields'][0]['fieldPath']);
         self::assertArrayNotHasKey('lastScheduledAt', $config['template']['settings']['schedule']);

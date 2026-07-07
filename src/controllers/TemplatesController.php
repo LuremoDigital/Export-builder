@@ -146,10 +146,8 @@ final class TemplatesController extends Controller
         return $this->redirect('data-export-builder/exports/' . $duplicate->id);
     }
 
-    public function actionExportConfig(?int $templateId = null): Response
+    public function actionExportConfig(int $templateId): Response
     {
-        $templateId ??= (int)Craft::$app->getRequest()->getRequiredBodyParam('templateId');
-
         $template = Plugin::$plugin->get('templates')->getTemplateById($templateId);
         if ($template === null) {
             throw new NotFoundHttpException('Export template not found.');
