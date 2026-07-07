@@ -386,7 +386,7 @@ final class FieldValueHelper
             return false;
         }
 
-        foreach (['typeHandle', 'handle'] as $property) {
+        foreach (['type', 'status', 'typeHandle', 'handle'] as $property) {
             if (property_exists($item, $property) && $item->{$property} === $segment) {
                 return true;
             }

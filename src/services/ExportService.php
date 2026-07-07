@@ -83,9 +83,7 @@ final class ExportService extends Component
                     array_map(static fn(ExportField $field): string => $field->fieldPath, $template->getFieldsSorted())
                 );
 
-                if ($eagerLoadPaths !== [] && method_exists($query, 'with')) {
-                    $query->with($eagerLoadPaths);
-                }
+                $this->applyEagerLoadPaths($query, $eagerLoadPaths);
             }
 
             $filePath = ExportFileHelper::buildFilePath($template, new ExportRun(['id' => (int)$runRecord->id, 'format' => $template->format, 'templateId' => $template->id ?? 0]));
@@ -174,9 +172,7 @@ final class ExportService extends Component
             array_map(static fn(ExportField $field): string => $field->fieldPath, $fields)
         );
 
-        if ($eagerLoadPaths !== []) {
-            $query->with($eagerLoadPaths);
-        }
+        $this->applyEagerLoadPaths($query, $eagerLoadPaths);
 
         foreach ($query->batch($this->batchSize) as $elements) {
             foreach ($elements as $element) {
@@ -653,5 +649,22 @@ final class ExportService extends Component
         );
 
         FilterApplier::applyTo($query, $plan, $template->elementType);
+    }
+
+    /**
+     * @param string[] $paths
+     */
+    private function applyEagerLoadPaths(mixed $query, array $paths): void
+    {
+        foreach (['lineItems' => 'withLineItems', 'transactions' => 'withTransactions'] as $path => $method) {
+            if (in_array($path, $paths, true) && method_exists($query, $method)) {
+                $query->{$method}(true);
+                $paths = array_values(array_diff($paths, [$path]));
+            }
+        }
+
+        if ($paths !== [] && method_exists($query, 'with')) {
+            $query->with($paths);
+        }
     }
 }

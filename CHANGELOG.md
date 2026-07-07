@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+### Added
+
+- Refund amount, date, reference, and currency columns in the Commerce accounting export preset
+- Field paths can now filter related objects by `type` and `status` (e.g. `transactions.refund.success.paymentAmount`)
+
+### Changed
+
+- Commerce order exports use the native `withLineItems`/`withTransactions` eager loading when available
+
 ## 1.4.1 — 2026-07-07
 
 ### Added
