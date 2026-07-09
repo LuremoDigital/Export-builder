@@ -18,6 +18,7 @@ use Luremo\DataExportBuilder\helpers\ExportRetentionHelper;
 use Luremo\DataExportBuilder\helpers\FilterApplier;
 use Luremo\DataExportBuilder\helpers\FilterSpecMapper;
 use Luremo\DataExportBuilder\helpers\FieldValueHelper;
+use Luremo\DataExportBuilder\helpers\SpreadsheetCellHelper;
 use Luremo\DataExportBuilder\jobs\RunExportJob;
 use Luremo\DataExportBuilder\models\ExportField;
 use Luremo\DataExportBuilder\models\ExportRun;
@@ -38,11 +39,11 @@ final class ExportService extends Component
     private int $defaultQueueThreshold = 1000;
     private int $batchSize = 200;
 
-    public function runTemplate(ExportTemplate $template, ?int $userId, bool $forceQueue = false): ExportRun
+    public function runTemplate(ExportTemplate $template, ?int $userId, bool $forceQueue = false, ?string $deliveryKey = null): ExportRun
     {
         $query = $this->buildSourceQuery($template);
         $estimatedCount = $this->estimateRowCount($query);
-        $run = $this->createRunRecord($template, $userId);
+        $run = $this->createRunRecord($template, $userId, $deliveryKey);
 
         if ($forceQueue || $this->shouldQueueForCount($template, $estimatedCount)) {
             Craft::$app->getQueue()->push(new RunExportJob(['runId' => $run->id]));
@@ -60,12 +61,10 @@ final class ExportService extends Component
             throw new Exception(sprintf('Export run %d could not be found.', $runId));
         }
 
-        $template = Plugin::$plugin->get('templates')->getTemplateById((int)$runRecord->templateId);
-        if ($template === null) {
-            throw new Exception(sprintf('Template %d could not be found.', (int)$runRecord->templateId));
-        }
+        $filePath = null;
 
         try {
+            $template = $this->templateForRun($runRecord);
             $this->assertEditionRuntimeAccess($template);
 
             $runRecord->status = ExportRun::STATUS_RUNNING;
@@ -109,6 +108,7 @@ final class ExportService extends Component
                 'filePath' => $filePath,
                 'fileName' => basename($filePath),
                 'fileMimeType' => ExportFileHelper::fileMimeType($template->format),
+                'deliveryKey' => $runRecord->deliveryKey,
             ]));
             $runRecord->storageType = $deliveryResult['storageType'];
             if (!$deliveryResult['keepLocalCopy'] && is_file($filePath)) {
@@ -120,10 +120,17 @@ final class ExportService extends Component
 
             Plugin::$plugin->get('templates')->touchLastRun($template->id ?? 0, (string)$runRecord->finishedAt);
         } catch (\Throwable $exception) {
-            Craft::error($exception->getMessage(), 'data-export-builder');
+            Craft::error($exception, 'data-export-builder');
+
+            if ($filePath !== null && is_file($filePath) && !@unlink($filePath)) {
+                Craft::warning(sprintf('Could not delete failed export file "%s".', $filePath), 'data-export-builder');
+            }
 
             $runRecord->status = ExportRun::STATUS_FAILED;
-            $runRecord->errorMessage = $exception->getMessage();
+            $runRecord->filePath = null;
+            $runRecord->fileName = null;
+            $runRecord->fileMimeType = null;
+            $runRecord->errorMessage = 'Export failed. Review the Craft logs for details.';
             $runRecord->finishedAt = Db::prepareDateForDb(new \DateTimeImmutable('now', new \DateTimeZone('UTC')));
             $runRecord->save(false);
         }
@@ -176,7 +183,7 @@ final class ExportService extends Component
 
         foreach ($query->batch($this->batchSize) as $elements) {
             foreach ($elements as $element) {
-                yield $this->buildAssocRow($element, $fields, $valueMode);
+                yield $this->sanitizeSpreadsheetRow($this->buildAssocRow($element, $fields, $valueMode), $valueMode);
             }
         }
     }
@@ -302,13 +309,15 @@ final class ExportService extends Component
         return $query;
     }
 
-    private function createRunRecord(ExportTemplate $template, ?int $userId): ExportRun
+    private function createRunRecord(ExportTemplate $template, ?int $userId, ?string $deliveryKey = null): ExportRun
     {
         $record = new ExportRunRecord();
         $record->templateId = $template->id;
         $record->status = ExportRun::STATUS_QUEUED;
         $record->format = $template->format;
         $record->triggeredByUserId = $userId;
+        $record->templateSnapshotJson = $this->buildTemplateSnapshot($template);
+        $record->deliveryKey = $deliveryKey ?? bin2hex(random_bytes(16));
         $record->save(false);
 
         return Plugin::$plugin->get('templates')->getRunById((int)$record->id)
@@ -343,7 +352,7 @@ final class ExportService extends Component
             foreach ($query->batch($this->batchSize) as $elements) {
                 foreach ($elements as $element) {
                     $row = $this->buildRow($element, $fields, 'csv');
-                    fputcsv($handle, $row);
+                    fputcsv($handle, array_map([SpreadsheetCellHelper::class, 'sanitize'], $row));
 
                     foreach ($fields as $index => $field) {
                         if (($field->settings['warnWhenBlank'] ?? false) && ($row[$index] ?? '') === '') {
@@ -393,21 +402,24 @@ final class ExportService extends Component
         $processed = 0;
         $isFirstRow = true;
 
-        foreach ($query->batch($this->batchSize) as $elements) {
-            foreach ($elements as $element) {
-                $row = $this->buildAssocRow($element, $fields, 'json');
-                fwrite($handle, ($isFirstRow ? '' : ',') . PHP_EOL . (json_encode($row, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}'));
-                $isFirstRow = false;
-                $processed++;
+        try {
+            foreach ($query->batch($this->batchSize) as $elements) {
+                foreach ($elements as $element) {
+                    $row = $this->buildAssocRow($element, $fields, 'json');
+                    fwrite($handle, ($isFirstRow ? '' : ',') . PHP_EOL . (json_encode($row, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '{}'));
+                    $isFirstRow = false;
+                    $processed++;
+                }
+
+                if ($progressCallback !== null) {
+                    $progressCallback($processed, $total);
+                }
             }
 
-            if ($progressCallback !== null) {
-                $progressCallback($processed, $total);
-            }
+            fwrite($handle, $processed > 0 ? PHP_EOL . ']' : ']');
+        } finally {
+            fclose($handle);
         }
-
-        fwrite($handle, $processed > 0 ? PHP_EOL . ']' : ']');
-        fclose($handle);
 
         return $processed;
     }
@@ -427,37 +439,42 @@ final class ExportService extends Component
         // (tens of thousands of rows) run for minutes and risk OOM in the queue
         // worker. openspout writes incrementally, so memory stays flat.
         $writer = new XlsxWriter();
-        $writer->openToFile($filePath);
-
-        $writer->addRow(SpoutRow::fromValues(array_map(
-            static fn(ExportField $field): string => $field->columnLabel,
-            array_values($fields)
-        )));
-
+        $opened = false;
         $processed = 0;
 
-        foreach ($query->batch($this->batchSize) as $elements) {
-            foreach ($elements as $element) {
-                $row = $this->buildRow($element, $fields, FieldValueHelper::MODE_XLSX);
+        try {
+            $writer->openToFile($filePath);
+            $opened = true;
+            $writer->addRow(SpoutRow::fromValues(array_map(
+                static fn(ExportField $field): string => $field->columnLabel,
+                array_values($fields)
+            )));
 
-                $cells = [];
-                foreach (array_values($row) as $value) {
-                    if (is_array($value)) {
-                        $value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
+            foreach ($query->batch($this->batchSize) as $elements) {
+                foreach ($elements as $element) {
+                    $row = $this->buildRow($element, $fields, FieldValueHelper::MODE_XLSX);
+
+                    $cells = [];
+                    foreach (array_values($row) as $value) {
+                        if (is_array($value)) {
+                            $value = json_encode($value, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '';
+                        }
+                        $cells[] = SpreadsheetCellHelper::sanitize((string)($value ?? ''));
                     }
-                    $cells[] = (string)($value ?? '');
+
+                    $writer->addRow(SpoutRow::fromValues($cells));
+                    $processed++;
                 }
 
-                $writer->addRow(SpoutRow::fromValues($cells));
-                $processed++;
+                if ($progressCallback !== null) {
+                    $progressCallback($processed, $total);
+                }
             }
-
-            if ($progressCallback !== null) {
-                $progressCallback($processed, $total);
+        } finally {
+            if ($opened) {
+                $writer->close();
             }
         }
-
-        $writer->close();
 
         return $processed;
     }
@@ -552,6 +569,16 @@ final class ExportService extends Component
             is_string($separator) ? $separator : ', ',
             is_int($decimalPlaces) ? $decimalPlaces : null
         );
+    }
+
+    /** @param array<string, mixed> $row */
+    private function sanitizeSpreadsheetRow(array $row, string $format): array
+    {
+        if (!in_array($format, ['csv', FieldValueHelper::MODE_XLSX, FieldValueHelper::MODE_FLAT_TEXT], true)) {
+            return $row;
+        }
+
+        return array_map([SpreadsheetCellHelper::class, 'sanitize'], $row);
     }
 
     private function buildWheelformMessageQuery(ExportTemplate $template): mixed
@@ -666,5 +693,69 @@ final class ExportService extends Component
         if ($paths !== [] && method_exists($query, 'with')) {
             $query->with($paths);
         }
+    }
+
+    private function templateForRun(ExportRunRecord $runRecord): ExportTemplate
+    {
+        if (is_array($runRecord->templateSnapshotJson) && $runRecord->templateSnapshotJson !== []) {
+            $snapshot = $runRecord->templateSnapshotJson;
+
+            return $this->templateFromSnapshot($snapshot, (int)$runRecord->templateId, $runRecord->format);
+        }
+
+        return Plugin::$plugin->get('templates')->getTemplateById((int)$runRecord->templateId)
+            ?? throw new Exception(sprintf('Template %d could not be found.', (int)$runRecord->templateId));
+    }
+
+    public function retryRun(ExportRun $run, int $userId): ExportRun
+    {
+        $template = $run->templateSnapshot !== []
+            ? $this->templateFromSnapshot($run->templateSnapshot, $run->templateId, $run->format)
+            : Plugin::$plugin->get('templates')->getTemplateById($run->templateId);
+
+        if ($template === null) {
+            throw new Exception(sprintf('Template %d could not be found.', $run->templateId));
+        }
+
+        return $this->runTemplate($template, $userId, true, $run->deliveryKey);
+    }
+
+    /** @param array<string, mixed> $snapshot */
+    private function templateFromSnapshot(array $snapshot, int $templateId, string $fallbackFormat): ExportTemplate
+    {
+        return new ExportTemplate([
+            'id' => $templateId,
+            'name' => (string)($snapshot['name'] ?? 'Export'),
+            'handle' => (string)($snapshot['handle'] ?? 'export'),
+            'elementType' => (string)($snapshot['elementType'] ?? 'entries'),
+            'format' => (string)($snapshot['format'] ?? $fallbackFormat),
+            'filters' => is_array($snapshot['filters'] ?? null) ? $snapshot['filters'] : [],
+            'settings' => is_array($snapshot['settings'] ?? null) ? $snapshot['settings'] : [],
+            'fields' => array_map(static fn(array $field): ExportField => new ExportField([
+                'fieldPath' => (string)($field['fieldPath'] ?? ''),
+                'columnLabel' => (string)($field['columnLabel'] ?? ''),
+                'sortOrder' => (int)($field['sortOrder'] ?? 1),
+                'settings' => is_array($field['settings'] ?? null) ? $field['settings'] : [],
+            ]), is_array($snapshot['fields'] ?? null) ? $snapshot['fields'] : []),
+        ]);
+    }
+
+    /** @return array<string, mixed> */
+    private function buildTemplateSnapshot(ExportTemplate $template): array
+    {
+        return [
+            'name' => $template->name,
+            'handle' => $template->handle,
+            'elementType' => $template->elementType,
+            'format' => $template->format,
+            'filters' => $template->filters,
+            'settings' => $template->settings,
+            'fields' => array_map(static fn(ExportField $field): array => [
+                'fieldPath' => $field->fieldPath,
+                'columnLabel' => $field->columnLabel,
+                'sortOrder' => $field->sortOrder,
+                'settings' => $field->settings,
+            ], $template->getFieldsSorted()),
+        ];
     }
 }

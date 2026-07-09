@@ -10,8 +10,8 @@ use craft\elements\Asset;
 use craft\helpers\FileHelper;
 use craft\models\VolumeFolder;
 use GuzzleHttp\Client;
-use GuzzleHttp\Exception\GuzzleException;
 use Luremo\DataExportBuilder\helpers\CapabilityHelper;
+use Luremo\DataExportBuilder\helpers\WebhookUrlHelper;
 use Luremo\DataExportBuilder\models\ExportRun;
 use Luremo\DataExportBuilder\models\ExportTemplate;
 use yii\base\Exception;
@@ -74,12 +74,12 @@ final class DeliveryService extends Component
 
         $storageType = 'local';
 
-        if ($settings['emailRecipients'] !== []) {
-            $this->sendEmail($template, $run, $settings);
-        }
-
         if ($settings['webhookUrl'] !== '') {
             $this->sendWebhook($template, $run, $settings);
+        }
+
+        if ($settings['emailRecipients'] !== []) {
+            $this->sendEmail($template, $run, $settings);
         }
 
         if ($settings['remoteVolumeUid'] !== '') {
@@ -139,35 +139,62 @@ final class DeliveryService extends Component
      */
     private function sendWebhook(ExportTemplate $template, ExportRun $run, array $settings): void
     {
+        $stream = null;
         try {
+            $destination = WebhookUrlHelper::resolvePublicDestination($settings['webhookUrl']);
+            if (!defined('CURLOPT_RESOLVE')) {
+                throw new Exception('Webhook delivery requires the PHP cURL extension.');
+            }
+            $payload = json_encode([
+                'templateId' => $template->id,
+                'templateName' => $template->name,
+                'runId' => $run->id,
+                'format' => $run->format,
+                'rowCount' => $run->rowCount,
+                'fileName' => $run->fileName,
+            ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+            $timestamp = (string)time();
+            $stream = fopen((string)$run->filePath, 'rb');
+            if ($stream === false) {
+                throw new Exception('Could not open export file for webhook delivery.');
+            }
+
+            $resolvedAddress = str_contains($destination['address'], ':')
+                ? '[' . $destination['address'] . ']'
+                : $destination['address'];
+
             (new Client(['timeout' => 20]))->post($settings['webhookUrl'], [
+                'allow_redirects' => false,
+                'http_errors' => true,
+                'curl' => [CURLOPT_RESOLVE => [sprintf('%s:%d:%s', $destination['host'], $destination['port'], $resolvedAddress)]],
                 'headers' => array_filter([
                     'X-Data-Export-Builder-Signature' => $settings['webhookSecret'] !== ''
-                        ? hash_hmac('sha256', (string)$run->id, $settings['webhookSecret'])
+                        ? WebhookUrlHelper::buildSignature($timestamp, $payload, (string)$run->filePath, $settings['webhookSecret'])
                         : null,
+                    'X-Data-Export-Builder-Timestamp' => $timestamp,
+                    'X-Data-Export-Builder-Idempotency-Key' => 'run-' . ($run->deliveryKey ?? (string)$run->id),
                 ]),
                 'multipart' => [
                     [
                         'name' => 'payload',
-                        'contents' => json_encode([
-                            'templateId' => $template->id,
-                            'templateName' => $template->name,
-                            'runId' => $run->id,
-                            'format' => $run->format,
-                            'rowCount' => $run->rowCount,
-                            'fileName' => $run->fileName,
-                        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) ?: '{}',
+                        'contents' => $payload,
                         'headers' => ['Content-Type' => 'application/json'],
                     ],
                     [
                         'name' => 'file',
-                        'contents' => fopen($run->filePath, 'rb'),
+                        'contents' => $stream,
                         'filename' => $run->fileName ?? basename($run->filePath),
                     ],
                 ],
             ]);
-        } catch (GuzzleException $exception) {
-            throw new Exception('Export webhook delivery failed: ' . $exception->getMessage(), 0, $exception);
+        } catch (\Throwable $exception) {
+            Craft::error($exception, 'data-export-builder');
+
+            throw new Exception('Export webhook delivery failed.', 0, $exception);
+        } finally {
+            if (is_resource($stream)) {
+                fclose($stream);
+            }
         }
     }
 

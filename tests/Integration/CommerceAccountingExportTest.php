@@ -31,7 +31,7 @@ final class CommerceAccountingExportTest extends TestCase
 
         self::assertCount(1, $rows);
         self::assertSame('Order Number', $rows[0][0]);
-        self::assertSame('Line Item Totals', $rows[0][22]);
+        self::assertSame('Line Item Totals', $rows[0][18]);
     }
 
     public function testOrderQueryExcludesCarts(): void

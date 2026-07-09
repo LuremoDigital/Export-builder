@@ -12,6 +12,20 @@ use PHPUnit\Framework\TestCase;
 
 final class ScheduleServiceTest extends TestCase
 {
+    public function testNormalizeSettingsDefaultsMissingScheduleKeys(): void
+    {
+        $settings = (new ScheduleService())->normalizeSettings(['schedule' => ['enabled' => true]]);
+
+        self::assertSame([
+            'enabled' => true,
+            'frequency' => 'daily',
+            'hour' => 2,
+            'minute' => 0,
+            'weekdays' => [],
+            'lastScheduledAt' => null,
+        ], $settings);
+    }
+
     /**
      * Scheduling is a Pro-gated feature. getNextRunDate()/isDue() short-circuit
      * to null/false unless a Pro Plugin instance is registered, which requires a

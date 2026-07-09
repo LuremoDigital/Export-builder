@@ -29,6 +29,8 @@ final class ExportRun extends Model
     public string|DateTimeInterface|null $finishedAt = null;
     public ?int $triggeredByUserId = null;
     public ?string $errorMessage = null;
+    public array $templateSnapshot = [];
+    public ?string $deliveryKey = null;
     public string|DateTimeInterface|null $dateCreated = null;
     public string|DateTimeInterface|null $dateUpdated = null;
 
@@ -45,8 +47,10 @@ final class ExportRun extends Model
             ]],
             [['format'], 'in', 'range' => ExportFormatHelper::allowedFormatHandles()],
             [['fileName'], 'string', 'max' => 255],
+            [['deliveryKey'], 'string', 'max' => 64],
             [['fileMimeType'], 'string', 'max' => 100],
             [['filePath', 'errorMessage'], 'string'],
+            [['templateSnapshot'], 'safe'],
         ];
     }
 

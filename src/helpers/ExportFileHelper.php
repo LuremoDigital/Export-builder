@@ -49,6 +49,8 @@ final class ExportFileHelper
         $realBase = realpath(self::getBaseExportPath());
         $realPath = realpath($path);
 
-        return $realBase !== false && $realPath !== false && str_starts_with($realPath, $realBase);
+        return $realBase !== false
+            && $realPath !== false
+            && ($realPath === $realBase || str_starts_with($realPath, $realBase . DIRECTORY_SEPARATOR));
     }
 }

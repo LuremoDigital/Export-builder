@@ -12,6 +12,7 @@ use Luremo\DataExportBuilder\helpers\DateFilterHelper;
 use Luremo\DataExportBuilder\helpers\ExportFormatHelper;
 use Luremo\DataExportBuilder\helpers\ExportRetentionHelper;
 use Luremo\DataExportBuilder\helpers\FilterSpecMapper;
+use Luremo\DataExportBuilder\helpers\WebhookUrlHelper;
 use Luremo\DataExportBuilder\models\ExportField;
 use Luremo\DataExportBuilder\models\ExportRun;
 use Luremo\DataExportBuilder\models\ExportTemplate;
@@ -117,38 +118,47 @@ final class TemplateService extends Component
             return false;
         }
 
-        $record = $template->id ? ExportTemplateRecord::findOne($template->id) : new ExportTemplateRecord();
-        if ($record === null) {
-            throw new Exception('Unable to load export template record.');
-        }
+        $transaction = Craft::$app->getDb()->beginTransaction();
+        try {
+            $record = $template->id ? ExportTemplateRecord::findOne($template->id) : new ExportTemplateRecord();
+            if ($record === null) {
+                throw new Exception('Unable to load export template record.');
+            }
 
-        $record->name = $template->name;
-        $record->handle = $template->handle;
-        $record->elementType = $template->elementType;
-        $record->format = $template->format;
-        $record->filtersJson = $template->filters;
-        $record->settingsJson = $template->settings;
-        $record->creatorId = $template->creatorId;
-        $record->lastRunAt = $template->lastRunAt;
-        $record->save(false);
+            $record->name = $template->name;
+            $record->handle = $template->handle;
+            $record->elementType = $template->elementType;
+            $record->format = $template->format;
+            $record->filtersJson = $template->filters;
+            $record->settingsJson = $template->settings;
+            $record->creatorId = $template->creatorId;
+            $record->lastRunAt = $template->lastRunAt;
+            $record->save(false);
 
-        $template->id = (int)$record->id;
-        $template->uid = $record->uid;
+            $template->id = (int)$record->id;
+            $template->uid = $record->uid;
 
-        ExportFieldRecord::deleteAll(['templateId' => $template->id]);
-        foreach ($template->getFieldsSorted() as $sortOrder => $field) {
-            $fieldRecord = new ExportFieldRecord();
-            $fieldRecord->templateId = $template->id;
-            $fieldRecord->fieldPath = $field->fieldPath;
-            $fieldRecord->columnLabel = $field->columnLabel;
-            $fieldRecord->sortOrder = $sortOrder + 1;
-            $fieldRecord->settingsJson = $field->settings;
-            $fieldRecord->save(false);
+            ExportFieldRecord::deleteAll(['templateId' => $template->id]);
+            foreach ($template->getFieldsSorted() as $sortOrder => $field) {
+                $fieldRecord = new ExportFieldRecord();
+                $fieldRecord->templateId = $template->id;
+                $fieldRecord->fieldPath = $field->fieldPath;
+                $fieldRecord->columnLabel = $field->columnLabel;
+                $fieldRecord->sortOrder = $sortOrder + 1;
+                $fieldRecord->settingsJson = $field->settings;
+                $fieldRecord->save(false);
 
-            $field->id = (int)$fieldRecord->id;
-            $field->templateId = $template->id;
-            $field->sortOrder = $sortOrder + 1;
-            $field->uid = $fieldRecord->uid;
+                $field->id = (int)$fieldRecord->id;
+                $field->templateId = $template->id;
+                $field->sortOrder = $sortOrder + 1;
+                $field->uid = $fieldRecord->uid;
+            }
+
+            $transaction->commit();
+        } catch (\Throwable $exception) {
+            $transaction->rollBack();
+
+            throw $exception;
         }
 
         return true;
@@ -186,6 +196,17 @@ final class TemplateService extends Component
             $template->addError('settings', 'Email, webhook, and volume delivery require the Pro edition.');
 
             return false;
+        }
+
+        $webhookUrl = trim((string)($template->settings['delivery']['webhookUrl'] ?? ''));
+        if ($webhookUrl !== '') {
+            try {
+                WebhookUrlHelper::assertValidConfiguration($webhookUrl);
+            } catch (\InvalidArgumentException $exception) {
+                $template->addError('settings', $exception->getMessage());
+
+                return false;
+            }
         }
 
         return true;
@@ -517,6 +538,8 @@ final class TemplateService extends Component
             'finishedAt' => $this->normalizeDateTimeValue($record->finishedAt),
             'triggeredByUserId' => $record->triggeredByUserId !== null ? (int)$record->triggeredByUserId : null,
             'errorMessage' => $record->errorMessage,
+            'templateSnapshot' => is_array($record->templateSnapshotJson) ? $record->templateSnapshotJson : [],
+            'deliveryKey' => $record->deliveryKey,
             'dateCreated' => $this->normalizeDateTimeValue($record->dateCreated),
             'dateUpdated' => $this->normalizeDateTimeValue($record->dateUpdated),
         ]);
