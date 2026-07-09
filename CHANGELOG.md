@@ -2,10 +2,26 @@
 
 ## Unreleased
 
+## 1.4.3 — 2026-07-09
+
+### Added
+
+- Per-run template snapshots and stable delivery keys for queued exports and retries
+- Webhook signatures, idempotency headers, and public-destination validation
+
 ### Changed
 
 - Plugin display name unified to "Export Builder" across the control panel, queue jobs, and documentation
 - Repository links updated to the renamed GitHub repository
+- Scheduler claiming is safer when multiple scheduler processes run concurrently
+- Commerce accounting exports remain aligned with the 19-column v1 schema
+
+### Fixed
+
+- Spreadsheet exports now neutralize formula-like cell values
+- Webhook redirects and other non-success responses now fail delivery explicitly
+
+## Unreleased
 
 ## 1.4.2 — 2026-07-07
 
