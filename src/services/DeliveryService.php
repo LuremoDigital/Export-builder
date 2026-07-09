@@ -163,9 +163,9 @@ final class DeliveryService extends Component
                 ? '[' . $destination['address'] . ']'
                 : $destination['address'];
 
-            (new Client(['timeout' => 20]))->post($settings['webhookUrl'], [
+            $response = (new Client(['timeout' => 20]))->post($settings['webhookUrl'], [
                 'allow_redirects' => false,
-                'http_errors' => true,
+                'http_errors' => false,
                 'curl' => [CURLOPT_RESOLVE => [sprintf('%s:%d:%s', $destination['host'], $destination['port'], $resolvedAddress)]],
                 'headers' => array_filter([
                     'X-Data-Export-Builder-Signature' => $settings['webhookSecret'] !== ''
@@ -187,6 +187,8 @@ final class DeliveryService extends Component
                     ],
                 ],
             ]);
+
+            self::assertSuccessfulWebhookStatus($response->getStatusCode());
         } catch (\Throwable $exception) {
             Craft::error($exception, 'data-export-builder');
 
@@ -195,6 +197,13 @@ final class DeliveryService extends Component
             if (is_resource($stream)) {
                 fclose($stream);
             }
+        }
+    }
+
+    private static function assertSuccessfulWebhookStatus(int $statusCode): void
+    {
+        if ($statusCode < 200 || $statusCode >= 300) {
+            throw new Exception(sprintf('Webhook responded with HTTP %d.', $statusCode));
         }
     }
 

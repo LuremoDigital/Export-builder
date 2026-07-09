@@ -317,11 +317,24 @@ final class ExportService extends Component
         $record->format = $template->format;
         $record->triggeredByUserId = $userId;
         $record->templateSnapshotJson = $this->buildTemplateSnapshot($template);
-        $record->deliveryKey = $deliveryKey ?? bin2hex(random_bytes(16));
+        $record->deliveryKey = $this->resolveDeliveryKey($deliveryKey);
         $record->save(false);
 
         return Plugin::$plugin->get('templates')->getRunById((int)$record->id)
             ?? throw new Exception('Unable to create export run.');
+    }
+
+    private function resolveDeliveryKey(?string $deliveryKey): string
+    {
+        if ($deliveryKey === null) {
+            return bin2hex(random_bytes(16));
+        }
+
+        if (trim($deliveryKey) === '' || StringHelper::length($deliveryKey) > 64) {
+            throw new \InvalidArgumentException('Delivery keys must contain at most 64 non-whitespace characters.');
+        }
+
+        return $deliveryKey;
     }
 
     private function estimateRowCount(mixed $query): int

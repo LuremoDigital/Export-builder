@@ -119,4 +119,33 @@ final class ExportServiceTest extends TestCase
         self::assertSame('Order Number', $snapshot['fields'][0]['columnLabel']);
         self::assertSame('2026-07-01', $snapshot['filters']['dateFrom']);
     }
+
+    public function testRejectsInvalidCallerSuppliedDeliveryKeys(): void
+    {
+        $method = new \ReflectionMethod(ExportService::class, 'resolveDeliveryKey');
+
+        foreach (['', '   ', str_repeat('x', 65)] as $deliveryKey) {
+            try {
+                $method->invoke(new ExportService(), $deliveryKey);
+                self::fail('Expected invalid delivery key to be rejected.');
+            } catch (\InvalidArgumentException) {
+                self::addToAssertionCount(1);
+            }
+        }
+    }
+
+    public function testPreservesAValidCallerSuppliedDeliveryKey(): void
+    {
+        $method = new \ReflectionMethod(ExportService::class, 'resolveDeliveryKey');
+
+        self::assertSame('scheduled-slot-2026-07-09T12:00:00Z', $method->invoke(new ExportService(), 'scheduled-slot-2026-07-09T12:00:00Z'));
+    }
+
+    public function testGeneratesAValidDeliveryKeyWhenNoneIsSupplied(): void
+    {
+        $method = new \ReflectionMethod(ExportService::class, 'resolveDeliveryKey');
+        $deliveryKey = $method->invoke(new ExportService(), null);
+
+        self::assertMatchesRegularExpression('/^[a-f0-9]{32}$/', $deliveryKey);
+    }
 }
