@@ -81,16 +81,19 @@
 - Configure a scheduled export on a template.
 - Run `php craft data-export-builder/scheduler/run` and confirm a normal export run is created when due.
 - Confirm no run is created before the schedule is due.
+- Run two scheduler processes for the same due slot and confirm exactly one export run is queued.
 
 ## Retention Cleanup
 
 - Set export file retention to 7 days, age a completed run beyond 7 days, run `php craft data-export-builder/scheduler/run`, and confirm the local file is deleted and no longer downloadable.
 - Set export file retention to never and confirm cleanup leaves completed files in place.
+- Force a CSV, JSON, XLSX, and delivery failure and confirm no partial local export file remains.
 
 ## Delivery (Pro)
 
 - Email: configure email delivery, run an export, and confirm the file arrives as an attachment.
 - Webhook: configure a webhook endpoint, run an export, and confirm the payload and file are posted.
+- Webhook: confirm HTTP, localhost, private-IP, credentialed, and redirecting URLs are rejected; confirm a signed request contains timestamp, signature, and idempotency headers.
 - Volume: configure a Craft asset volume, run an export, and confirm a copy is uploaded.
 - `Keep local downloadable copy`: confirm the local run file is retained after remote upload when enabled.
 
@@ -98,6 +101,7 @@
 
 - Point webhook/email delivery at an invalid endpoint/address and confirm the run is marked failed with a stored error message, and is retryable from the CP.
 - Confirm a failed run does not delete or corrupt a previously completed run's file.
+- Export a value beginning with `=`, `+`, `-`, or `@` to CSV and XLSX and confirm the spreadsheet treats it as text.
 
 ## Edition Downgrade
 

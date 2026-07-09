@@ -6,12 +6,14 @@ namespace Luremo\DataExportBuilder\services;
 
 use Craft;
 use craft\base\Component;
+use craft\helpers\Db;
 use DateInterval;
 use DateTimeImmutable;
 use DateTimeZone;
 use Luremo\DataExportBuilder\helpers\CapabilityHelper;
 use Luremo\DataExportBuilder\models\ExportTemplate;
 use Luremo\DataExportBuilder\Plugin;
+use Luremo\DataExportBuilder\records\ExportTemplateRecord;
 
 final class ScheduleService extends Component
 {
@@ -21,6 +23,9 @@ final class ScheduleService extends Component
     public function normalizeSettings(array $settings): array
     {
         $schedule = is_array($settings['schedule'] ?? null) ? $settings['schedule'] : [];
+        $frequency = in_array(($schedule['frequency'] ?? 'daily'), ['hourly', 'daily', 'weekly'], true)
+            ? (string)($schedule['frequency'] ?? 'daily')
+            : 'daily';
         $weekdays = array_values(array_filter(array_map(
             static fn(mixed $value): string => strtolower(trim((string)$value)),
             is_array($schedule['weekdays'] ?? null) ? $schedule['weekdays'] : []
@@ -28,9 +33,7 @@ final class ScheduleService extends Component
 
         return [
             'enabled' => (bool)($schedule['enabled'] ?? false),
-            'frequency' => in_array(($schedule['frequency'] ?? 'daily'), ['hourly', 'daily', 'weekly'], true)
-                ? (string)$schedule['frequency']
-                : 'daily',
+            'frequency' => $frequency,
             'hour' => max(0, min(23, (int)($schedule['hour'] ?? 2))),
             'minute' => max(0, min(59, (int)($schedule['minute'] ?? 0))),
             'weekdays' => $weekdays,
@@ -95,8 +98,21 @@ final class ScheduleService extends Component
                 continue;
             }
 
-            Plugin::$plugin->get('exports')->runTemplate($template, null, true);
-            $this->markScheduled($template);
+            $transaction = Craft::$app->getDb()->beginTransaction();
+            try {
+                if (!$this->claimLatestSlot($template)) {
+                    $transaction->rollBack();
+                    continue;
+                }
+
+                Plugin::$plugin->get('exports')->runTemplate($template, null, true);
+                $this->markScheduled($template);
+                $transaction->commit();
+            } catch (\Throwable $exception) {
+                $transaction->rollBack();
+
+                throw $exception;
+            }
             $count++;
         }
 
@@ -117,6 +133,29 @@ final class ScheduleService extends Component
         );
 
         Plugin::$plugin->get('templates')->updateTemplateSettings($template->id, $settings);
+        ExportTemplateRecord::updateAll([
+            'lastScheduledSlot' => Db::prepareDateForDb($at->setTimezone(new DateTimeZone('UTC'))),
+        ], ['id' => $template->id]);
+    }
+
+    private function claimLatestSlot(ExportTemplate $template): bool
+    {
+        if (!$template->id) {
+            return false;
+        }
+
+        $settings = $this->normalizeSettings($template->settings);
+        $slot = $this->latestRunSlot($settings, new DateTimeImmutable('now', $this->timeZone()));
+        if ($slot === null) {
+            return false;
+        }
+
+        $slotValue = Db::prepareDateForDb($slot->setTimezone(new DateTimeZone('UTC')));
+
+        return ExportTemplateRecord::updateAll(
+            ['lastScheduledSlot' => $slotValue],
+            ['and', ['id' => $template->id], ['or', ['lastScheduledSlot' => null], ['<', 'lastScheduledSlot', $slotValue]]]
+        ) === 1;
     }
 
     private function latestRunSlot(array $settings, DateTimeImmutable $now): ?DateTimeImmutable

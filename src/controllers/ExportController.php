@@ -45,7 +45,7 @@ final class ExportController extends Controller
             throw new NotFoundHttpException('Export run not found.');
         }
 
-        Plugin::$plugin->get('exports')->runTemplate($template, (int)Craft::$app->getUser()->getId(), true);
+        Plugin::$plugin->get('exports')->retryRun($run, (int)Craft::$app->getUser()->getId());
         Craft::$app->getSession()->setNotice('Export retry queued.');
 
         return $this->redirect('data-export-builder/exports/' . $templateId);

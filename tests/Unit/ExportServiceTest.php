@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Luremo\DataExportBuilder\Tests\Unit;
 
 use Luremo\DataExportBuilder\models\ExportTemplate;
+use Luremo\DataExportBuilder\models\ExportField;
 use Luremo\DataExportBuilder\services\ExportService;
 use PHPUnit\Framework\TestCase;
 
@@ -97,5 +98,54 @@ final class ExportServiceTest extends TestCase
         // serving text/csv for a file that is not CSV.
         $this->expectException(\InvalidArgumentException::class);
         \Luremo\DataExportBuilder\helpers\ExportFileHelper::fileMimeType('yaml');
+    }
+
+    public function testRunSnapshotPreservesTheTemplateDefinitionAtQueueTime(): void
+    {
+        $template = new ExportTemplate([
+            'name' => 'Orders',
+            'handle' => 'orders',
+            'elementType' => 'orders',
+            'format' => 'csv',
+            'filters' => ['dateFrom' => '2026-07-01'],
+            'settings' => ['queueThreshold' => 1000],
+            'fields' => [new ExportField(['fieldPath' => 'number', 'columnLabel' => 'Order Number'])],
+        ]);
+
+        $method = new \ReflectionMethod(ExportService::class, 'buildTemplateSnapshot');
+        $snapshot = $method->invoke(new ExportService(), $template);
+        $template->fields[0]->columnLabel = 'Changed later';
+
+        self::assertSame('Order Number', $snapshot['fields'][0]['columnLabel']);
+        self::assertSame('2026-07-01', $snapshot['filters']['dateFrom']);
+    }
+
+    public function testRejectsInvalidCallerSuppliedDeliveryKeys(): void
+    {
+        $method = new \ReflectionMethod(ExportService::class, 'resolveDeliveryKey');
+
+        foreach (['', '   ', str_repeat('x', 65)] as $deliveryKey) {
+            try {
+                $method->invoke(new ExportService(), $deliveryKey);
+                self::fail('Expected invalid delivery key to be rejected.');
+            } catch (\InvalidArgumentException) {
+                self::addToAssertionCount(1);
+            }
+        }
+    }
+
+    public function testPreservesAValidCallerSuppliedDeliveryKey(): void
+    {
+        $method = new \ReflectionMethod(ExportService::class, 'resolveDeliveryKey');
+
+        self::assertSame('scheduled-slot-2026-07-09T12:00:00Z', $method->invoke(new ExportService(), 'scheduled-slot-2026-07-09T12:00:00Z'));
+    }
+
+    public function testGeneratesAValidDeliveryKeyWhenNoneIsSupplied(): void
+    {
+        $method = new \ReflectionMethod(ExportService::class, 'resolveDeliveryKey');
+        $deliveryKey = $method->invoke(new ExportService(), null);
+
+        self::assertMatchesRegularExpression('/^[a-f0-9]{32}$/', $deliveryKey);
     }
 }

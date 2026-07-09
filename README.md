@@ -141,7 +141,7 @@ Exports can contain personal data (user records, Commerce order and customer det
 - Completed export files are written to Craft's storage. Per-template retention can auto-delete local files after 7, 30, or 90 days, or keep them forever.
 - Expired local export files are cleaned by `php craft data-export-builder/scheduler/run`.
 - Download access is gated by the `downloadDataExports` permission.
-- Pro webhook delivery posts the export payload to your configured endpoint; the endpoint URL and any secret you set are stored in the template config. Use HTTPS endpoints and rotate secrets if exposed.
+- Pro webhook delivery posts the export payload and file to a configured public HTTPS endpoint; redirects and private-network destinations are blocked. When a secret is configured, the signature covers a timestamp, the JSON payload, and the SHA-256 digest of the file. The request also includes a run-scoped idempotency key.
 - Pro email delivery sends the exported file as an attachment to the addresses you configure.
 - Remote copies are not deleted by local retention cleanup; prune those where they are stored.
 
